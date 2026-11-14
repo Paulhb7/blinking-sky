@@ -6,7 +6,7 @@ Ce journal sépare ce qui existait avant le hackathon de ce qui a été fait pen
 
 - **Project Atlas** (`~/Desktop/h/holo-mars`) : la carte, la vue « Night sky », le filtre SPHEREx limité à l'étoile de Barnard (deux images, 6 novembre), la page `/spherex`.
 - **Cadre du deck** (`presentation.tsx`, `presentation.css`) : écrit pour un pitch interne antérieur, repris tel quel.
-- **Recherche de naines froides** (`~/Desktop/h/h-astronomists/spherex/H3_cold_dwarfs`) : méthode, mesures par image, ajustements de gabarits, vérification bibliographique. Commencée le soir du 13 novembre, terminée le matin du 14. Paul doit dire où tombe la limite avec le début officiel du hackathon.
+- **Recherche de naines froides** (`~/Desktop/h/h-astronomists/spherex/H3_cold_dwarfs`) : méthode, mesures par image, ajustements de gabarits, vérification bibliographique. Commencée le soir du 13 novembre, terminée le matin du 14. Ce travail est donc antérieur au début officiel du hackathon et déclaré comme tel.
 - **Maquette de cadrage** (artifact) : aucune ligne n'en est reprise dans le code.
 
 ## Samedi 14 novembre
