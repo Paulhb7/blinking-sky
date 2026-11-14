@@ -117,9 +117,11 @@ export default function App() {
     setView((v) => ({ ...v, kind, frame: firstFrame(next, kind), playing: next.frames.filter((f) => f.kind === kind).length > 1, flagged: false }));
     // In the galaxy, a field that is not one of the dots still needs a place: its measured or estimated distance.
     const MEASURED: Record<string, number> = { barnard: 1.83, "J085510.83-071442.5": 2.28, "2MASSI_J0415195-093506": 5.7 };
-    const parsecs = MEASURED[next.id] ?? photometricDistance(next.dwarf?.type, next.dwarf?.W2)?.[1] ?? 20;
+    // A Solar System body is, at this scale, at the Sun.
+    const parsecs = next.solar ? 2e-4 : MEASURED[next.id] ?? photometricDistance(next.dwarf?.type, next.dwarf?.W2)?.[1] ?? 20;
+    const field = next.geometry ? next.geometry.width * next.geometry.gridPixelArcsec / 3600 / 0.38 : TELESCOPE_FOV;
     sky.current?.aimAt(next.ra, next.dec, parsecs);
-    sky.current?.flyTo(next.geometry?.centerRaDeg ?? next.ra, next.geometry?.centerDecDeg ?? next.dec, next.id === "barnard" ? 0.45 : TELESCOPE_FOV);
+    sky.current?.flyTo(next.geometry?.centerRaDeg ?? next.ra, next.geometry?.centerDecDeg ?? next.dec, next.id === "barnard" || next.solar ? field : TELESCOPE_FOV);
   }, [catalog]);
 
   const goLive = useCallback((input: LiveInput) => {
@@ -233,6 +235,7 @@ export default function App() {
     const d = target?.dwarf, type = d?.type ?? d?.knownType, hasDip = Boolean(d && d.dip !== "none" && d.snr >= 5);
     const head = (note: string) => `<b>3D view</b><em>${note}</em>`;
     if (target?.id === "barnard") { look = { kind: "star", temperature: 3200, methane: 0, brightness: 1, seed: 3 }; caption = head("Illustration · not an image") + "<span>Red dwarf star, about 3,200 K</span>"; }
+    else if (target?.solar) { look = { kind: "unknown", temperature: 200, methane: 0, brightness: 1, seed: hashSeed(target.id) }; caption = head("Placeholder · not an image") + `<span>${target.solar.kind === "comet" ? "A comet" : target.solar.kind === "centaur" ? "A centaur" : "An asteroid"}, ${target.solar.sunDistanceAu} au from the Sun</span>`; }
     else if (target && type === "galaxy") { look = { kind: "galaxy", temperature: 0, methane: 0, brightness: 1, seed: hashSeed(target.id) }; caption = head("Illustration · not an image") + "<span>A galaxy: billions of stars, far outside the Milky Way</span>"; }
     else if (target && d && target.group !== "rejected" && (hasDip || type)) {
       // Drawn from what is known: the type sets the temperature and colour, the methane index the bands.
@@ -248,7 +251,7 @@ export default function App() {
       caption = head("Not identified · placeholder, not an image") + `<span>${target.live && !target.live.finished ? "Measuring: its colour and bands appear if methane shows up" : target.group === "rejected" ? "Rejected: not a cold dwarf" : "No methane dip measured: a star or a galaxy, type unknown"}</span>`;
     }
     s.setPortrait(look, caption);
-  }, [target?.id, target?.dwarf?.dip, target?.dwarf?.R, target?.dwarf?.type, target?.dwarf?.knownType, target?.dwarf?.snr, target?.group, target?.live?.finished, frame?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [target?.id, target?.solar, target?.dwarf?.dip, target?.dwarf?.R, target?.dwarf?.type, target?.dwarf?.knownType, target?.dwarf?.snr, target?.group, target?.live?.finished, frame?.id]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     const measure = () => sky.current?.setInsets({ left: (leftRef.current?.offsetWidth ?? 0) + 28, right: panel && target && window.innerWidth > 900 ? Math.min(400, window.innerWidth - 48) + 28 : 0 });
     measure(); window.addEventListener("resize", measure); return () => window.removeEventListener("resize", measure);

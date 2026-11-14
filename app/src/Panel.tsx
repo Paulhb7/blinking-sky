@@ -10,7 +10,7 @@ export type SpherexView = { kind: "date" | "colour"; frame: number; playing: boo
 const CHIP: Record<string, [string, string]> = {
   start: ["Known object", "known"], unpublished: ["Candidate · not confirmed", "cand"], blind: ["Blind test · already typed", "known"],
   published: ["Candidate · published without a spectrum", "cand"], rejected: ["Rejected · false dip", "off"],
-  queue: ["Unchecked source", "cand"], position: ["Your position", "known"],
+  queue: ["Unchecked source", "cand"], position: ["Your position", "known"], solar: ["Solar System · it moves", "known"],
 };
 const monthLabel = (mjd: number) => new Date((mjd - 40587) * 86400000).toLocaleDateString("en-GB", { month: "short", year: "numeric", timeZone: "UTC" });
 const fmt = (v: number | null | undefined, n = 2) => v === null || v === undefined || !Number.isFinite(v) ? "—" : v.toFixed(n);
@@ -178,7 +178,7 @@ export default function SpherexPanel({ target, catalog, view, ready, error, vote
           {target.frames.some((f) => f.flagged) && <label className="spx-tog"><input type="checkbox" checked={view.flagged} onChange={(e) => onView({ flagged: e.target.checked })} /><ScanLine size={12} /> Flagged pixels</label>}
           <label className="spx-tog grow">Opacity<input aria-label="SPHEREx image opacity" type="range" min="0" max="1" step="0.05" value={view.opacity} onChange={(e) => onView({ opacity: Number(e.target.value) })} /></label>
         </div>
-        <p className="spx-small">{target.stacked ? "Real SPHEREx exposures, averaged. Missing pixels are black. The dashed square is one native 6.15″ pixel." : "Real single exposures. Black core: saturated or missing data."}</p>
+        <p className="spx-small">{target.stacked ? "Real SPHEREx exposures, averaged. Missing pixels are black. The dashed square is one native 6.15″ pixel." : target.solar ? "Real single exposures on one fixed sky grid, hours apart. Black pixels: flagged defects. Nothing is moved or amplified." : "Real single exposures. Black core: saturated or missing data."}</p>
       </section> : <section className="spx-card"><p className="spx-hint">{target.live ? "The image builds up as the exposures arrive: a faint source needs a few dozen before it shows." : "No image stack has been built for this field yet: the marker on the sky shows where it is, and the spectrum below is measured on the single exposures."}</p><button type="button" className="spx-btn" onClick={onRecenter}>Recenter</button></section>}
 
       {(target.group === "queue" || target.group === "position") && target.frames.length > 0 && <section className="spx-card spx-vote">

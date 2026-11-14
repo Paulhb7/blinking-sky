@@ -9,7 +9,7 @@ export type SpxFrame = {
   /** Number of exposures averaged in this frame (1 for a single exposure). */
   images: number; band?: [number, number]; date?: string; dateRange?: [string, string];
 };
-export type SpxGroup = "start" | "unpublished" | "blind" | "published" | "rejected" | "queue" | "position";
+export type SpxGroup = "start" | "solar" | "unpublished" | "blind" | "published" | "rejected" | "queue" | "position";
 export type SpxDeep = {
   note: string; z: number | null; J: number | null; zJ: number | null; JW2: number | null; shape: string | null;
   sep: number | null; sep2015: number | null; pmCatwise: [number, number]; pmOptical: [number, number, number] | null; optical?: string; wise?: string;
@@ -33,6 +33,8 @@ export type SpxTarget = {
   /** Set while exposures are being read from the archive in this browser. */
   live?: { done: number; total: number; megabytes: number; finished: boolean; error?: string; pmSigma?: number };
   epoch?: number; pmMas?: [number, number];
+  /** A Solar System body crossing a fixed field in single exposures. */
+  solar?: { kind: "comet" | "asteroid" | "centaur"; hours: number; movedArcsec: number; sunDistanceAu: number; earthDistanceAu: number };
   processing?: string[]; display?: string; source?: string;
 };
 export type SpxMethod = {
@@ -47,6 +49,7 @@ export type SpxCatalog = {
 
 export const GROUPS: { id: SpxGroup; label: string; hint: string }[] = [
   { id: "start", label: "Start here", hint: "Known objects: check that the tool shows what is expected." },
+  { id: "solar", label: "Solar System · moves in hours", hint: "Comets and asteroids crossing a fixed patch of sky, one real exposure per frame." },
   { id: "unpublished", label: "Candidates · no publication found", hint: "Methane dip in SPHEREx, motion in CatWISE, nothing found in the lists searched." },
   { id: "blind", label: "Blind test", hint: "Picked by the same selection, then found to be already typed from a spectrum." },
   { id: "published", label: "Candidates · published without a spectrum", hint: "Known candidates: SPHEREx adds the first spectral evidence found for them." },
@@ -83,6 +86,7 @@ type DwarfJson = {
   knownType?: string; published: string; decision: string; images: number; dates: [number, number];
   bands: Record<string, [number | null, number | null, number]>; spectrum: [number, number, number][]; template: [number, number][] | null; deep?: SpxDeep;
 };
+type MoverJson = { id: string; name: string; kind: "comet" | "asteroid" | "centaur"; blurb: string; ra: number; dec: number; frame: SpxGeometry; frames: SpxFrame[]; hours: number; movedArcsec: number; sunDistanceAu: number; earthDistanceAu: number };
 type StackJson = Record<string, { frame: SpxGeometry; frames: SpxFrame[]; processing: string[]; display: { unit: string } }>;
 
 const NAME: Record<string, string> = { "J085510.83-071442.5": "WISE 0855−0714", "2MASSI_J0415195-093506": "2MASS 0415−0935" };
@@ -99,6 +103,7 @@ export async function loadSpherexCatalog(basePath: string, signal?: AbortSignal)
     if (!response.ok) throw new Error("SPHEREx data unavailable");
     return response.json();
   };
+  const movers = await get("/data/movers.json").catch(() => ({ bodies: [], processing: [], credit: "" })) as { bodies: MoverJson[]; processing: string[]; credit: string };
   const [barnard, dwarfs, stacks] = await Promise.all([
     get("/data/barnard.json") as Promise<BarnardJson>,
     get("/data/cold-dwarfs.json"),
@@ -127,6 +132,12 @@ export async function loadSpherexCatalog(basePath: string, signal?: AbortSignal)
       processing: stack?.processing, display: stack ? `8-bit grayscale, shared asinh stretch (${stack.display.unit}); not quantitative photometry` : undefined, source: "/data/cold-dwarfs.json",
     });
   }
+  for (const m of movers.bodies) targets.push({
+    id: m.id, name: m.name, group: "solar", ra: m.ra, dec: m.dec, blurb: `${m.blurb} Here it crosses ${m.movedArcsec}″ in ${m.hours} hours, ${m.sunDistanceAu} au from the Sun.`,
+    geometry: m.frame, stacked: false, frames: m.frames.map((f) => ({ ...f, image: local(f.image) })),
+    solar: { kind: m.kind, hours: m.hours, movedArcsec: m.movedArcsec, sunDistanceAu: m.sunDistanceAu, earthDistanceAu: m.earthDistanceAu },
+    processing: movers.processing, display: "8-bit grayscale, shared asinh stretch; not quantitative photometry", source: "/data/movers.json",
+  });
   // The two reference dwarfs sit with Barnard's Star at the top of the list.
   targets.sort((a, b) => Number(b.group === "start") - Number(a.group === "start"));
   return { targets, method: dwarfs.method, status: dwarfs.status, credit: dwarfs.credit, validation: dwarfs.validation, selection: dwarfs.selection, controls: dwarfs.controls };
