@@ -1,4 +1,4 @@
-import { BANDS, GRID, binSpectrum, methaneIndex, pool, positionAt, readExposure, stackNoise, stackWindows, stats } from "./spherex/core.js";
+import { BANDS, FIELDS, GRID, binSpectrum, methaneIndex, pool, positionAt, readExposure, stackNoise, stackWindows, stats } from "./spherex/core.js";
 import { imagesAt } from "./spherex/index.js";
 import { dayLabel, type SolarFrame, type SpxFrame, type SpxGroup, type SpxTarget } from "./data";
 import type { SolarBody } from "./sky/galaxy";
@@ -8,6 +8,10 @@ import type { SolarBody } from "./sky/galaxy";
 
 export type LiveInput = { id: string; name: string; ra: number; dec: number; group: SpxGroup; epoch?: number; pm?: [number, number]; pmTotal?: number; pmSigma?: number; W1?: number; W2?: number; blurb: string; published: string; /** spectral type already published for this object */ knownType?: string };
 type Point = { wave: number; flux: number; error: number; badFraction: number; mjd: number; detector: number };
+/** Width of the field a visitor can choose, in arcminutes. */
+export type FieldArcmin = 2 | 4 | 8;
+export const FIELD_CHOICES: FieldArcmin[] = [2, 4, 8];
+export const DEFAULT_FIELD: FieldArcmin = 2;
 const ERROR_SCALE = 1.6; // stacked errors are underestimated by about this factor (measured on empty positions in the earlier analysis)
 const date = (mjd: number) => new Date((mjd - 40587) * 86400000).toISOString().slice(0, 10);
 
@@ -22,7 +26,8 @@ function render(image: Float32Array, lo: number, hi: number, n = GRID.n) {
   return canvas.toDataURL("image/png");
 }
 
-export function startLive(input: LiveInput, onUpdate: (target: SpxTarget) => void) {
+export function startLive(input: LiveInput, onUpdate: (target: SpxTarget) => void, fieldArcmin: FieldArcmin = DEFAULT_FIELD) {
+  const grid = FIELDS[fieldArcmin] ?? FIELDS[2], across = Math.round(grid.n * grid.pixel);
   const abort = new AbortController(), source = { ra: input.ra, dec: input.dec, epoch: input.epoch ?? 2025.9, pm: input.pm ?? [0, 0] as [number, number] };
   const points: Point[] = [], windows: { w: Float32Array; wave: number; mjd: number }[] = [];
   let total = 0, done = 0, finished = false, error = "", seasons: number[] = [], lastEmit = 0, queued = false, fullSpectrum = false;
@@ -34,8 +39,8 @@ export function startLive(input: LiveInput, onUpdate: (target: SpxTarget) => voi
     const frames: SpxFrame[] = [];
     let lo = 0, hi = 1;
     if (lw.length >= 3) {
-      const all = stackWindows(lw.map((x) => x.w)), sigma = stackNoise(all) || 1e-3, c = (GRID.n - 1) / 2;
-      let peak = 0; for (let r = c - 3; r <= c + 3; r++) for (let q = c - 3; q <= c + 3; q++) { const v = all[r * GRID.n + q]; if (Number.isFinite(v)) peak = Math.max(peak, v); }
+      const all = stackWindows(lw.map((x) => x.w)), sigma = stackNoise(all) || 1e-3, c = (grid.n - 1) / 2;
+      let peak = 0; for (let r = c - 3; r <= c + 3; r++) for (let q = c - 3; q <= c + 3; q++) { const v = all[r * grid.n + q]; if (Number.isFinite(v)) peak = Math.max(peak, v); }
       lo = -2 * sigma; hi = Math.max(peak * 1.1, 12 * sigma);
       seasons.forEach((start, i) => {
         const end = seasons[i + 1] ?? Infinity, part = lw.filter((x) => x.mjd >= start && x.mjd < end);
@@ -44,10 +49,10 @@ export function startLive(input: LiveInput, onUpdate: (target: SpxTarget) => voi
         // Brightness at this date: inverse-variance mean of the single-exposure fluxes at 3.83–5 µm.
         let sw = 0, sf = 0; for (const p of points) if (p.mjd >= start && p.mjd < end && p.wave >= BANDS.LW[0] && p.wave < BANDS.LW[1] && p.badFraction < 0.3 && Number.isFinite(p.flux) && p.error > 0) { const wgt = 1 / (p.error * p.error); sw += wgt; sf += wgt * p.flux; }
         const flux: [number, number] | undefined = sw > 0 ? [sf / sw, ERROR_SCALE / Math.sqrt(sw)] : undefined;
-        frames.push({ flux, id: `date${i}`, kind: "date", label: dayLabel(date(mjds[mjds.length >> 1])), date: date(mjds[mjds.length >> 1]), dateRange: [date(mjds[0]), date(mjds[mjds.length - 1])], images: part.length, band: [3.83, 5], image: render(stackWindows(part.map((x) => x.w)), lo, hi) });
+        frames.push({ flux, id: `date${i}`, kind: "date", label: dayLabel(date(mjds[mjds.length >> 1])), date: date(mjds[mjds.length >> 1]), dateRange: [date(mjds[0]), date(mjds[mjds.length - 1])], images: part.length, band: [3.83, 5], image: render(stackWindows(part.map((x) => x.w)), lo, hi, grid.n) });
       });
-      frames.push({ id: "lw", kind: "colour", label: "3.83–5.0 µm", images: lw.length, band: [3.83, 5], image: render(all, lo, hi) });
-      if (ch4.length >= 4) frames.push({ id: "ch4", kind: "colour", label: "3.15–3.50 µm · methane band", images: ch4.length, band: [3.15, 3.5], image: render(stackWindows(ch4.map((x) => x.w)), lo, hi) });
+      frames.push({ id: "lw", kind: "colour", label: "3.83–5.0 µm", images: lw.length, band: [3.83, 5], image: render(all, lo, hi, grid.n) });
+      if (ch4.length >= 4) frames.push({ id: "ch4", kind: "colour", label: "3.15–3.50 µm · methane band", images: ch4.length, band: [3.15, 3.5], image: render(stackWindows(ch4.map((x) => x.w)), lo, hi, grid.n) });
     }
     const scaled = points.map((p) => ({ ...p, error: p.error * ERROR_SCALE }));
     const m = methaneIndex(scaled), measured = Number.isFinite(m.snr) && m.lw.n >= 6;
@@ -56,7 +61,7 @@ export function startLive(input: LiveInput, onUpdate: (target: SpxTarget) => voi
     const band = (b: { flux: number; error: number; n: number }): [number | null, number | null, number] => [Number.isFinite(b.flux) ? b.flux : null, Number.isFinite(b.error) ? b.error : null, b.n];
     return {
       id: input.id, name: input.name, group: input.group, ra, dec, blurb: input.blurb, stacked: true, epoch: 2026.03, pmMas: input.pm,
-      geometry: frames.length ? { system: "ICRS TAN", centerRaDeg: ra, centerDecDeg: dec, width: GRID.n, height: GRID.n, gridPixelArcsec: GRID.pixel, nativePixelArcsec: 6.15, referencePixelZeroBased: [(GRID.n - 1) / 2, (GRID.n - 1) / 2] } : undefined,
+      geometry: frames.length ? { system: "ICRS TAN", centerRaDeg: ra, centerDecDeg: dec, width: grid.n, height: grid.n, gridPixelArcsec: grid.pixel, nativePixelArcsec: 6.15, referencePixelZeroBased: [(grid.n - 1) / 2, (grid.n - 1) / 2] } : undefined,
       frames,
       motion: input.pmTotal ? { east: (input.pm?.[0] ?? 0) / 1000, north: (input.pm?.[1] ?? 0) / 1000, total: input.pmTotal, source: "CatWISE2020" } : undefined,
       dwarf: {
@@ -65,8 +70,8 @@ export function startLive(input: LiveInput, onUpdate: (target: SpxTarget) => voi
         type: null, typeUnc: null, chi2: null, knownType: input.knownType, published: input.published, decision: "", images: points.length, dates: mjds.length ? [Math.min(...mjds), Math.max(...mjds)] : [0, 0],
         bands: { CH4: band(m.ch4), PEAK: band(m.peak), LW: band(m.lw) }, spectrum: binSpectrum(scaled, 25), template: null, quick: true,
       },
-      live: { done, total, megabytes: (stats().bytes - bytes0) / 1e6, finished, error: error || undefined, pmSigma: input.pmSigma },
-      processing: ["Windows of the public level-2 images, read in this browser from NASA's bucket", "Local median background subtracted per exposure; no pixel flags applied", "Bilinear resampling on a fixed north-up grid of 2.05″ pixels", "Mean after rejection of single-exposure outliers; missing pixels are black",
+      live: { done, total, megabytes: (stats().bytes - bytes0) / 1e6, finished, error: error || undefined, pmSigma: input.pmSigma, fieldArcmin },
+      processing: ["Windows of the public level-2 images, read in this browser from NASA's bucket", "Local median background subtracted per exposure; no pixel flags applied", `Bilinear resampling on a fixed north-up grid of ${grid.pixel}″ pixels, ${across}″ across`, "Mean after rejection of single-exposure outliers; missing pixels are black",
         "Quick-look photometry: Gaussian-weighted fit at the catalogued position, scaled to PSF-fitted fluxes of known dwarfs; errors widened by 1.6"],
       display: "8-bit grayscale, shared asinh stretch; not quantitative photometry",
     };
@@ -79,7 +84,7 @@ export function startLive(input: LiveInput, onUpdate: (target: SpxTarget) => voi
 
   const read = async (list: { key: string; mjd: number; detector: number }[]) => {
     total += list.length; emit(true);
-    await pool(list, 10, (item) => readExposure(item.key, ra, dec, { signal: abort.signal }), (r) => {
+    await pool(list, 10, (item) => readExposure(item.key, ra, dec, { signal: abort.signal, half: grid.half, grid }), (r) => {
       done += 1;
       if (abort.signal.aborted) return;
       if (r && r.window) { points.push({ wave: r.wave, flux: r.flux, error: r.error, badFraction: r.badFraction, mjd: r.mjd, detector: r.detector }); windows.push({ w: r.window, wave: r.wave, mjd: r.mjd }); }

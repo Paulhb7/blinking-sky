@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { createPortal } from "react-dom";
-import { Pause, Play, Printer, ScanLine, X } from "lucide-react";
+import { Link, Pause, Play, Printer, ScanLine, X } from "lucide-react";
 import { VOTES, dayLabel, expectedShift, mjdLabel, sexagesimal, type SpxCatalog, type SpxFrame, type SpxTarget, type Vote } from "./data";
+import { FIELD_CHOICES, type FieldArcmin } from "./live";
 import DecryptedText from "./reactbits/DecryptedText";
 import "./panel.css";
 
@@ -141,9 +142,19 @@ type Props = {
   target: SpxTarget; catalog: SpxCatalog; view: SpherexView; ready: boolean; error: string; vote?: Vote;
   onView: (next: Partial<SpherexView>) => void; onClose: () => void; onRecenter: () => void; onRetry: () => void;
   onVote: (vote: Vote) => void; onMore?: () => void; onNext?: () => void; onReplay?: () => void;
+  /** Width of the field read live, arcminutes, when the visitor can change it. */
+  field?: FieldArcmin; onField?: (field: FieldArcmin) => void;
 };
+const FIELD_COST: Record<FieldArcmin, string> = { 2: "0.3", 4: "0.5", 8: "1" };
 
-export default function SpherexPanel({ target, catalog, view, ready, error, vote, onView, onClose, onRecenter, onRetry, onVote, onMore, onNext, onReplay }: Props) {
+/** Copies the address of the page, which already names the position (?ra=&dec=), so it can be embedded elsewhere. */
+function CopyLink() {
+  const [copied, setCopied] = useState(false);
+  const copy = () => { navigator.clipboard?.writeText(window.location.href).then(() => { setCopied(true); window.setTimeout(() => setCopied(false), 1600); }).catch(() => {}); };
+  return <button type="button" className="spx-btn" onClick={copy} title="Copy a link that opens this position"><Link size={12} /> {copied ? "Link copied" : "Copy link"}</button>;
+}
+
+export default function SpherexPanel({ target, catalog, view, ready, error, vote, onView, onClose, onRecenter, onRetry, onVote, onMore, onNext, onReplay, field, onField }: Props) {
   const [sheet, setSheet] = useState(false);
   const d = target.dwarf;
   const kinds = (["date", "colour"] as const).filter((k) => target.frames.some((f) => f.kind === k));
@@ -195,8 +206,12 @@ export default function SpherexPanel({ target, catalog, view, ready, error, vote
           {target.frames.some((f) => f.flagged) && <label className="spx-tog"><input type="checkbox" checked={view.flagged} onChange={(e) => onView({ flagged: e.target.checked })} /><ScanLine size={12} /> Flagged pixels</label>}
           <label className="spx-tog grow">Opacity<input aria-label="SPHEREx image opacity" type="range" min="0" max="1" step="0.05" value={view.opacity} onChange={(e) => onView({ opacity: Number(e.target.value) })} /></label>
         </div>
-        <p className="spx-small">{target.stacked ? "Real SPHEREx exposures, averaged. Missing pixels are black. The dashed square is one native 6.15″ pixel." : target.solar && target.live ? "Real single exposures on one fixed sky grid, read just now from NASA's archive. Isolated white pixels are detector defects or cosmic rays: they do not come back in the next frame. Nothing is moved or amplified." : target.solar ? "Real single exposures on one fixed sky grid, hours apart. Black pixels: flagged defects. Nothing is moved or amplified." : "Real single exposures. Black core: saturated or missing data."}</p>
-      </section> : <section className="spx-card"><p className="spx-hint">{target.live ? "The image builds up as the exposures arrive: a faint source needs a few dozen before it shows." : "No image stack has been built for this field yet: the marker on the sky shows where it is, and the spectrum below is measured on the single exposures."}</p><button type="button" className="spx-btn" onClick={onRecenter}>Recenter</button></section>}
+        <div className="spx-row wrap">
+          {field && onField && <div className="spx-seg" role="group" aria-label="Field of view"><span>Field</span>{FIELD_CHOICES.map((f) => <button key={f} type="button" aria-pressed={field === f} onClick={() => onField(f)} title={`${f}′ across · about ${FIELD_COST[f]} MB per exposure`}>{f}′</button>)}</div>}
+          <CopyLink />
+        </div>
+        <p className="spx-small">{target.stacked ? `Real SPHEREx exposures, averaged. Missing pixels are black. The dashed square is one native 6.15″ pixel.${field ? " A wider field reads more of each exposure: about 0.3, 0.5 or 1 MB." : ""}` : target.solar && target.live ? "Real single exposures on one fixed sky grid, read just now from NASA's archive. Isolated white pixels are detector defects or cosmic rays: they do not come back in the next frame. Nothing is moved or amplified." : target.solar ? "Real single exposures on one fixed sky grid, hours apart. Black pixels: flagged defects. Nothing is moved or amplified." : "Real single exposures. Black core: saturated or missing data."}</p>
+      </section> : <section className="spx-card"><p className="spx-hint">{target.live ? "The image builds up as the exposures arrive: a faint source needs a few dozen before it shows." : "No image stack has been built for this field yet: the marker on the sky shows where it is, and the spectrum below is measured on the single exposures."}</p><div className="spx-row wrap"><button type="button" className="spx-btn" onClick={onRecenter}>Recenter</button><CopyLink /></div></section>}
 
       {(target.group === "queue" || target.group === "position") && target.frames.length > 0 && <section className="spx-card spx-vote">
         <h3>What do you see?</h3>

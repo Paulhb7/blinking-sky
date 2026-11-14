@@ -38,10 +38,10 @@ Try it in one minute at https://blinking-sky.vercel.app (“Open the sky”). So
 - Easy to update with new data releases. Yes. One script cuts the archive’s footprint index (1.6 million images) into small tiles [N minutes on a laptop]; the viewer reads whatever the index contains, so a new release is a rebuild of the index, not of the tool. [The qr3 release was added this way on <date>.]
 - The 102 bands. Partly. Two colours are blinked, and every band that covers the position goes into its spectrum (next point).
 - Spectra on the fly. Yes. For any position, the browser bins the photometry of every exposure that covers it into a spectrum with 1σ bars and fits a template; one button completes it from 0.75 to 2.4 µm.
-- Add or subtract images taken at different times. Partly. Exposures of the same pass are added (averaged after rejecting outliers). Subtraction is not offered yet.
-- Choose the field of view. Not yet. The window is fixed: [X′] across for stacked fields, 10′ for Solar System bodies.
+- Add or subtract images taken at different times. Yes. Exposures of the same pass are added (averaged after rejecting outliers), and a “What changed” frame shows the last date minus the first, with the brightness measured at each date.
+- Choose the field of view. Yes. 2′, 4′ or 8′ across for any field read live; a wider field reads more of each exposure, about 0.3, 0.5 or 1 MB. Solar System bodies use a fixed 10′ field.
 - Overlay data from other telescopes. Partly. Gaia DR3 proper motions predict where a nearby object should be at each date; for each candidate the panel shows the unWISE and Legacy Surveys DR10 cutouts of the same position, and SIMBAD and VizieR open in one click. There is no live overlay on the SPHEREx image yet.
-- Coordinates in the URL. [Not yet / Yes: ?ra=&dec= opens the position — add before submitting if possible, it is a small change.]
+- Coordinates in the URL. Yes. ?ra=133.795&dec=-7.245 opens that position, and ?fov=4 or ?fov=8 widens the field, so the viewer can be embedded in another page. A “Copy link” button gives the address of whatever is on screen; a link to a known field or an unchecked source reopens it as itself.
 - Contamination flags. Partly. The Barnard demonstration applies the quality bits and offers a masked view; the live viewer does not apply pixel flags yet, and says so in its processing notes.
 - Test targets. See below.
 

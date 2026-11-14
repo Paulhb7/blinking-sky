@@ -35,7 +35,7 @@ export type SpxTarget = {
     quick?: boolean;
   };
   /** Set while exposures are being read from the archive in this browser. */
-  live?: { done: number; total: number; megabytes: number; finished: boolean; error?: string; pmSigma?: number };
+  live?: { done: number; total: number; megabytes: number; finished: boolean; error?: string; pmSigma?: number; /** width of the field read, arcminutes */ fieldArcmin?: number };
   epoch?: number; pmMas?: [number, number];
   /** A Solar System body crossing a fixed field in single exposures. */
   solar?: { kind: "comet" | "asteroid" | "centaur" | "trojan" | "near-Earth"; hours: number; movedArcsec: number; sunDistanceAu: number; earthDistanceAu?: number; /** Julian day of the visit */ jd?: number; /** id of the body on the Solar System map */ body?: string };

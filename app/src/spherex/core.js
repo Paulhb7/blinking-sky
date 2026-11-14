@@ -4,6 +4,10 @@
 export const S3 = "https://nasa-irsa-spherex.s3.us-east-1.amazonaws.com/";
 export const NATIVE_PIXEL = 6.15;            // arcsec
 export const GRID = { n: 61, pixel: 2.05 };  // output grid: one third of a native pixel, 125 arcsec across
+/** Fields of view a visitor can choose, by width in arcminutes: the output grid and the native half-window read per
+ * exposure (wide enough for a north-up square at any detector rotation). Wider fields read more rows: about 0.3, 0.5
+ * and 1 MB per exposure. The photometry is done on the native pixels, so it does not depend on the field. */
+export const FIELDS = { 2: { n: 61, pixel: 2.05, half: 16 }, 4: { n: 61, pixel: 4.1, half: 30 }, 8: { n: 121, pixel: 4.1, half: 58 } };
 const DEG = Math.PI / 180;
 const NX = 2040;
 const counters = { bytes: 0, requests: 0 };
@@ -163,7 +167,7 @@ export async function readExposure(key, ra, dec, { signal, want, half: HALF = 16
 
 /** Mean of the windows after rejecting single-image outliers; also returns the per-pixel count. */
 export function stackWindows(windows) {
-  const n = GRID.n * GRID.n, mean = new Float32Array(n).fill(NaN), column = [];
+  const n = windows.length ? windows[0].length : GRID.n * GRID.n, mean = new Float32Array(n).fill(NaN), column = [];
   if (!windows.length) return mean;
   for (let p = 0; p < n; p++) {
     column.length = 0;
@@ -181,7 +185,7 @@ export function stackWindows(windows) {
 
 /** Robust noise of a stack, from its outer rows. */
 export function stackNoise(image) {
-  const n = GRID.n, edge = [];
+  const n = Math.round(Math.sqrt(image.length)), edge = [];
   for (let p = 0; p < n * 12; p++) { if (Number.isFinite(image[p])) edge.push(image[p]); const q = image[n * n - 1 - p]; if (Number.isFinite(q)) edge.push(q); }
   if (edge.length < 20) return 0;
   edge.sort((a, b) => a - b); const median = edge[edge.length >> 1];

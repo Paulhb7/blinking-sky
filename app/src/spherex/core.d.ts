@@ -1,4 +1,5 @@
 export const S3: string; export const NATIVE_PIXEL: number; export const GRID: { n: number; pixel: number };
+export const FIELDS: Record<2 | 4 | 8, { n: number; pixel: number; half: number }>;
 export const BANDS: Record<string, [number, number]>;
 export function stats(): { bytes: number; requests: number };
 export type Exposure = { key: string; mjd: number; detector: number; wave: number; bandwidth: number; x: number; y: number; skipped?: boolean; window?: Float32Array; flux: number; error: number; badFraction: number; sigma: number };

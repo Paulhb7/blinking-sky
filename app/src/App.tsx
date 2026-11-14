@@ -8,7 +8,7 @@ import GradientText from "./reactbits/GradientText";
 import Panel, { type SpherexView } from "./Panel";
 import Slides, { type Director } from "./deck/Slides";
 import { GROUPS, VARIABLES, differenceImage, loadQueue, loadSolar, loadSolarFrames, loadSpherexCatalog, readVotes, sexagesimal, writeVote, type QueueSource, type SolarData, type SpxCatalog, type SpxTarget, type Vote } from "./data";
-import { startLive, startMover, type LiveInput } from "./live";
+import { DEFAULT_FIELD, startLive, startMover, type FieldArcmin, type LiveInput } from "./live";
 import { Sky, TELESCOPE_FOV, type Marker } from "./sky/Sky";
 import { photometricDistance, setRelation, type GalaxyObject, type SolarBody } from "./sky/galaxy";
 import { temperatureOf, type PortraitLook } from "./sky/portrait";
@@ -50,7 +50,14 @@ export default function App() {
   const [query, setQuery] = useState("");
   const [where, setWhere] = useState("");
   const params = useMemo(() => new URLSearchParams(window.location.search), []);
-  const [screen, setScreen] = useState<"home" | "sky">(params.has("sky") ? "sky" : "home");
+  // A position in the URL (?ra=&dec= in degrees, and ?fov=2|4|8) opens the tool on that patch of sky, so a link can be embedded.
+  const urlPosition = useMemo((): [number, number] | null => {
+    const ra = Number(params.get("ra")), dec = Number(params.get("dec"));
+    return params.has("ra") && params.has("dec") && Number.isFinite(ra) && Number.isFinite(dec) && ra >= 0 && ra < 360 && Math.abs(dec) <= 90 ? [ra, dec] : null;
+  }, [params]);
+  const [fieldArcmin, setFieldArcmin] = useState<FieldArcmin>(() => { const f = Number(params.get("fov")); return f === 4 || f === 8 ? f : DEFAULT_FIELD; });
+  const fieldRef = useRef<FieldArcmin>(fieldArcmin); fieldRef.current = fieldArcmin;
+  const [screen, setScreen] = useState<"home" | "sky">(params.has("sky") || urlPosition ? "sky" : "home");
   // The talk: "full" for a text slide over the turning galaxy, "live" when the slide is the tool itself.
   const [presenting, setPresenting] = useState<"full" | "live" | null>(params.has("present") ? "full" : null);
   const [guideRun, setGuideRun] = useState(0);
@@ -144,15 +151,21 @@ export default function App() {
   }, [catalog]);
 
   const goLiveRef = useRef<((input: LiveInput) => void) | null>(null);
+  const lastLive = useRef<LiveInput | null>(null);
   const goLive = useCallback((input: LiveInput) => {
     live.current?.stop();
-    autoKind.current = true;
+    autoKind.current = true; lastLive.current = input;
     setSelected(input.id); setPanel(true); setLiveTarget(null);
     setView((v) => ({ ...v, kind: "colour", frame: 0, playing: false, flagged: false }));
-    sky.current?.flyTo(input.ra, input.dec, TELESCOPE_FOV);
-    live.current = startLive(input, (t) => setLiveTarget(t));
+    sky.current?.flyTo(input.ra, input.dec, TELESCOPE_FOV * fieldRef.current / DEFAULT_FIELD);
+    live.current = startLive(input, (t) => setLiveTarget(t), fieldRef.current);
   }, []);
   goLiveRef.current = goLive;
+  // Another field of view: the same position is read again from the archive on the wider or narrower grid.
+  const changeField = useCallback((f: FieldArcmin) => {
+    setFieldArcmin(f); fieldRef.current = f;
+    if (lastLive.current && selectedRef.current === lastLive.current.id) goLive(lastLive.current);
+  }, [goLive]);
   // A small body clicked on the Solar System map: fly to where it was, and read the exposures of its visit.
   const chooseBody = useCallback((body: SolarBody) => {
     const prepared = Object.keys(PREPARED_BODY).find((k) => PREPARED_BODY[k] === body.id);
@@ -228,7 +241,27 @@ export default function App() {
   useEffect(() => { sky.current?.setHome(screen === "home"); }, [screen]);
   const enter = useCallback((then?: () => void) => { setScreen("sky"); setPresenting(null); then?.(); }, []);
   // Opening the tool straight on the sky (?sky) starts on the first field; from the landing page it starts in the neighbourhood.
-  useEffect(() => { if (catalog && !selected && screen === "sky" && params.has("sky")) choose("J085510.83-071442.5"); }, [catalog, selected, screen, choose, params]);
+  useEffect(() => { if (catalog && !selected && screen === "sky" && params.has("sky") && !urlPosition) choose("J085510.83-071442.5"); }, [catalog, selected, screen, choose, params, urlPosition]);
+  // Opening on a position from the URL: a known field or an unchecked source within 14″ opens as itself, anything else as a free position.
+  const booted = useRef(false);
+  useEffect(() => {
+    if (!catalog || !urlPosition || booted.current) return;
+    booted.current = true;
+    const [ra, dec] = urlPosition, cos = Math.cos(dec * Math.PI / 180), near = (t: { ra: number; dec: number }) => Math.hypot((t.ra - ra) * cos, t.dec - dec) < 0.004;
+    const known = catalog.targets.find((t) => !t.solar && near(t)), q = queue.find(near);
+    if (known) choose(known.id); else if (q) chooseQueue(q); else lookAt(ra, dec);
+  }, [catalog, queue, urlPosition, choose, chooseQueue, lookAt]);
+  // The address bar follows the field on screen, so the link can be copied and embedded: ?ra=&dec=, and ?fov= when not the default.
+  const isLive = Boolean(base?.live);
+  useEffect(() => {
+    if (presenting) return;
+    const url = new URL(window.location.href), q = url.searchParams;
+    if (base && !base.solar && screen === "sky") { q.set("ra", base.ra.toFixed(5)); q.set("dec", base.dec.toFixed(5)); if (fieldArcmin !== DEFAULT_FIELD && isLive) q.set("fov", String(fieldArcmin)); else q.delete("fov"); }
+    else { q.delete("ra"); q.delete("dec"); q.delete("fov"); }
+    const query = q.toString().replace(/(^|&)(sky|present)=(?=&|$)/g, "$1$2"); // the flags stay bare: ?sky, ?present
+    const next = `${url.pathname}${query ? `?${query}` : ""}${url.hash}`;
+    if (next !== `${window.location.pathname}${window.location.search}${window.location.hash}`) window.history.replaceState(null, "", next);
+  }, [base?.id, base?.ra, base?.dec, base?.solar, isLive, fieldArcmin, presenting, screen]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key.toLowerCase() === "p" && !presenting && (e.target as HTMLElement | null)?.tagName !== "INPUT" && !e.metaKey && !e.ctrlKey) setPresenting("full"); };
     window.addEventListener("keydown", onKey); return () => window.removeEventListener("keydown", onKey);
@@ -339,6 +372,8 @@ export default function App() {
   const checked = queue.filter((q) => votes[q.id]).length;
   const found = queue.filter((q) => { const v = votes[q.id]; return v?.vote === "fades" && v.R !== undefined && v.R !== null && v.R < 0.3 && (v.snr ?? 0) >= 5; }).length;
   const candidateCount = (catalog?.targets.filter((t) => t.group === "unpublished").length ?? 12);
+  // How wide the telescope view opens on a field: Barnard's demonstration is wide, a live field follows its grid.
+  const fovOf = (t: SpxTarget) => t.id === "barnard" ? 0.45 : t.live && t.geometry ? t.geometry.width * t.geometry.gridPixelArcsec / 3600 / 0.38 : TELESCOPE_FOV;
 
   return (
     <div className="app" data-screen={screen} data-level={level} data-presenting={presenting || undefined}>
@@ -368,7 +403,7 @@ export default function App() {
           })}
         </nav>}
         <div className="row">
-          <button type="button" onClick={() => { if (target) { setPanel(true); sky.current?.flyTo(target.geometry?.centerRaDeg ?? target.ra, target.geometry?.centerDecDeg ?? target.dec, target.id === "barnard" ? 0.45 : TELESCOPE_FOV, 1.4); } }}>Telescope view</button>
+          <button type="button" onClick={() => { if (target) { setPanel(true); sky.current?.flyTo(target.geometry?.centerRaDeg ?? target.ra, target.geometry?.centerDecDeg ?? target.dec, fovOf(target), 1.4); } }}>Telescope view</button>
           <button type="button" onClick={() => sky.current?.wide()}>Wide sky</button>
         </div>
         <div className="left-links"><button type="button" onClick={() => setScreen("home")}>← Home</button><button type="button" onClick={() => { setGuide(0); sky.current?.goLevel("galaxy"); }}>How it works</button><button type="button" onClick={() => setPresenting("full")}>Presentation · P</button></div>
@@ -409,7 +444,8 @@ export default function App() {
         onClose={() => { setPresenting(null); setGuideRun(0); sky.current?.show("sun"); }} onLaunch={() => { setGuideRun(0); enter(); sky.current?.show("sun"); }} />}
       {target && catalog && panel && <Panel target={target} catalog={catalog} view={view} ready={target.frames.length > 0} error="" vote={votes[target.id]?.vote}
         onView={(next) => { if (next.kind) autoKind.current = false; setView((v) => ({ ...v, ...next })); }} onClose={() => setPanel(false)}
-        onRecenter={() => sky.current?.flyTo(target.geometry?.centerRaDeg ?? target.ra, target.geometry?.centerDecDeg ?? target.dec, target.id === "barnard" ? 0.45 : TELESCOPE_FOV, 1.2)} onRetry={() => {}}
+        onRecenter={() => sky.current?.flyTo(target.geometry?.centerRaDeg ?? target.ra, target.geometry?.centerDecDeg ?? target.dec, fovOf(target), 1.2)} onRetry={() => {}}
+        field={target.live && !target.solar ? fieldArcmin : undefined} onField={changeField}
         onVote={(vote: Vote) => setVotes(writeVote(target, vote))} onMore={live.current ? () => live.current?.more() : undefined} onNext={target.group === "queue" ? nextUnchecked : undefined}
         onReplay={target.group === "unpublished" && !target.live ? () => replay(target) : undefined} />}
     </div>
