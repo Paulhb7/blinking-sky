@@ -47,6 +47,7 @@ try {
       cast = (p) => { t0 ??= p.metadata.timestamp; const f = `f${String(n++).padStart(4, "0")}.jpg`; writeFileSync(join(dir, f), Buffer.from(p.data, "base64")); lines.push([f, Math.round((p.metadata.timestamp - t0) * 1000)]); };
       await send("Page.startScreencast", { format: "jpeg", quality: 92, everyNthFrame: 1 }); await sleep(ms); await send("Page.stopScreencast"); cast = null;
       writeFileSync(join(dir, "times.json"), JSON.stringify(lines)); console.log("cast", name, n, "frames", (n / ms * 1000).toFixed(1), "fps"); }
+    else if (op === "save") { const [file, expr] = arg; const url = await evaluate(expr); if (url) { writeFileSync(join(OUT, file), Buffer.from(String(url).split(",")[1], "base64")); console.log("save", file); } else console.log("save failed", file); }
     else if (op === "shot") { const { data } = await send("Page.captureScreenshot", { format: "png" }); writeFileSync(join(OUT, arg), Buffer.from(data, "base64")); console.log("shot", arg); }
   }
 } finally { ws?.close(); chrome.kill("SIGKILL"); }

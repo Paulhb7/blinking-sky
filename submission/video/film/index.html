@@ -28,6 +28,7 @@
       h2 { font-size: 92px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.08; max-width: 1500px; }
       .cyan { color: var(--cyan); }
       .amber { color: var(--amber); }
+      .sub.amber { color: var(--amber); }
       .sub { font-size: 44px; font-weight: 500; color: var(--soft); margin-top: 36px; line-height: 1.3; max-width: 1400px; }
 
       /* The two blink scenes: the real image on the left, the sentence on the right. */
@@ -49,9 +50,11 @@
       .lower h2 { font-size: 66px; max-width: 1620px; }
       .lower .sub { font-size: 36px; margin-top: 18px; }
 
-      .result { display: flex; align-items: center; gap: 60px; }
-      .result b { font-size: 330px; font-weight: 800; letter-spacing: -0.05em; line-height: 0.9; flex: none; }
-      .result h2 { font-size: 88px; max-width: 1150px; }
+      .result { display: flex; align-items: center; gap: 44px; max-width: 940px; }
+      .result b { font-size: 260px; font-weight: 800; letter-spacing: -0.05em; line-height: 0.9; flex: none; }
+      .result h2 { font-size: 66px; max-width: 640px; }
+      #poster { position: absolute; right: -40px; top: 120px; width: 900px; border-radius: 14px; border: 1px solid rgba(94, 242, 255, 0.35); box-shadow: 0 30px 120px rgba(0, 0, 0, 0.7); }
+      #s7 .sub { max-width: 860px; }
       .kicker.amber { color: var(--amber); }
       .stats { display: flex; gap: 90px; margin-top: 10px; }
       .stat b { display: block; font-size: 170px; font-weight: 800; letter-spacing: -0.04em; line-height: 1; }
@@ -67,12 +70,13 @@
       <!-- Recorded from the tool itself -->
       <video class="clip" id="v-galaxy" src="assets/galaxy.mp4" muted playsinline data-start="0" data-duration="5.6" data-media-start="0.2" data-track-index="0"></video>
       <video class="clip" id="v-enter" src="assets/enter.mp4" muted playsinline data-start="5.6" data-duration="3.8" data-media-start="0.6" data-track-index="0"></video>
-      <video class="clip" id="v-solar" src="assets/solarfly.mp4" muted playsinline data-start="19" data-duration="2.3" data-media-start="1.7" data-track-index="0"></video>
-      <video class="clip" id="v-pallas" src="assets/pallas.mp4" muted playsinline data-start="21.3" data-duration="2.3" data-media-start="0.3" data-track-index="0"></video>
+      <video class="clip" id="v-solar" src="assets/solarfly.mp4" muted playsinline data-start="17.8" data-duration="1.9" data-media-start="2.0" data-track-index="0"></video>
+      <video class="clip" id="v-pallas" src="assets/pallas.mp4" muted playsinline data-start="19.7" data-duration="1.95" data-media-start="0.3" data-track-index="0"></video>
+      <video class="clip" id="v-vela" src="assets/vela.mp4" muted playsinline data-start="21.65" data-duration="1.95" data-media-start="2.5" data-track-index="0"></video>
       <video class="clip" id="v-queue" src="assets/queue.mp4" muted playsinline data-start="23.6" data-duration="6" data-media-start="2.6" data-track-index="0"></video>
 
       <div class="clip scrim" id="scrim-a" data-start="0" data-duration="9.4" data-track-index="1"></div>
-      <div class="clip scrim light" id="scrim-b" data-start="19" data-duration="4.6" data-track-index="1"></div>
+      <div class="clip scrim light" id="scrim-b" data-start="17.8" data-duration="5.8" data-track-index="1"></div>
       <div class="clip scrim" id="scrim-c" data-start="23.6" data-duration="6" data-track-index="1"></div>
 
       <!-- 0.0 Who we are -->
@@ -97,26 +101,28 @@
       </section>
 
       <!-- 9.4 Blink across dates -->
-      <section class="clip scene blink" id="s4" data-start="9.4" data-duration="5.2" data-track-index="2">
+      <section class="clip scene blink" id="s4" data-start="9.4" data-duration="4.6" data-track-index="2">
         <div class="shot">
           <p class="tag">WISE 0855−0714 · real SPHEREx images</p>
           <div class="frame">
           <img id="d0" src="assets/stacks/J085510.83-071442.5_date0.png" alt="" />
           <img id="d1" src="assets/stacks/J085510.83-071442.5_date1.png" alt="" />
           <img id="d2" src="assets/stacks/J085510.83-071442.5_date2.png" alt="" />
+          <img id="d3" src="assets/stacks/J085510.83-071442.5_diff.png" alt="" />
           <i class="tick a" style="left: 318px; top: 318px"></i><i class="tick b" style="left: 396px; top: 318px"></i>
           <i class="tick c" style="left: 318px; top: 396px"></i><i class="tick d" style="left: 396px; top: 396px"></i>
           </div>
-          <div class="stamp"><span id="l0">May 2025</span><span id="l1">Nov 2025</span><span id="l2">May 2026</span></div>
+          <div class="stamp"><span id="l0">May 2025</span><span id="l1">Nov 2025</span><span id="l2">May 2026</span><span id="l3" class="amber">What changed</span></div>
         </div>
         <div class="say">
           <h2>Blink two dates.</h2>
           <p class="sub">What moves is close to us.<br />This brown dwarf is 7 light-years away.</p>
+          <p class="sub amber" id="s4-diff">Black: where it was. White: where it is now.</p>
         </div>
       </section>
 
       <!-- 14.6 Blink across colours -->
-      <section class="clip scene blink" id="s5" data-start="14.6" data-duration="4.4" data-track-index="2">
+      <section class="clip scene blink" id="s5" data-start="14" data-duration="3.8" data-track-index="2">
         <div class="shot">
           <p class="tag">CWISE J2359−2809 · real SPHEREx images</p>
           <div class="frame">
@@ -133,18 +139,23 @@
         </div>
       </section>
 
-      <!-- 19.0 The tool, live -->
-      <section class="clip scene lower" id="s6a" data-start="19" data-duration="2.3" data-track-index="2">
+      <!-- 17.8 The tool, live -->
+      <section class="clip scene lower" id="s6a" data-start="17.8" data-duration="1.9" data-track-index="2">
         <h2>Read live from NASA’s archive.</h2>
         <p class="sub">In your browser. Nothing to install.</p>
       </section>
-      <section class="clip scene lower" id="s6b" data-start="21.3" data-duration="2.3" data-track-index="2">
-        <h2>7,083 asteroids, moving in hours.</h2>
-        <p class="sub">Brown dwarfs move in years.</p>
+      <section class="clip scene lower" id="s6b" data-start="19.7" data-duration="1.95" data-track-index="2">
+        <h2>Asteroids move in hours.</h2>
+        <p class="sub">7,083 of them on the map.</p>
+      </section>
+      <section class="clip scene lower" id="s6c" data-start="21.65" data-duration="1.95" data-track-index="2">
+        <h2>Stars flare up: <span class="amber">4.4 times brighter</span>.</h2>
+        <p class="sub">Measured live, date by date.</p>
       </section>
 
       <!-- 23.6 The result -->
       <section class="clip scene" id="s7" data-start="23.6" data-duration="3.5" data-track-index="2">
+        <img id="poster" src="assets/poster.png" alt="" />
         <p class="kicker amber" id="s7-k">The result</p>
         <div class="result">
           <b class="amber" id="s7-n">12</b>
@@ -177,14 +188,20 @@
         ids.forEach((id, k) => { tl.set(id, { opacity: k === 0 ? 1 : 0 }, 0); tl.set(labels[k], { opacity: k === 0 ? 1 : 0.3 }, 0); });
         for (let t = start, n = 0; t < end; t += step, n++) ids.forEach((id, k) => { tl.set(id, { opacity: k === n % ids.length ? 1 : 0 }, t); tl.set(labels[k], { opacity: k === n % ids.length ? 1 : 0.3 }, t); });
       };
-      rise("#s4 .frame", 9.4, 0.35); rise("#s4 .say h2", 9.6); rise("#s4 .say .sub", 10.4);
-      show(["#d0", "#d1", "#d2"], ["#l0", "#l1", "#l2"], 9.4, 14.6, 0.55);
-      rise("#s5 .frame", 14.6, 0.35); rise("#s5 .say h2", 14.8); rise("#s5 .say .sub", 15.6);
-      show(["#c0", "#c1"], ["#k0", "#k1"], 14.6, 19, 0.6);
+      rise("#s4 .frame", 9.4, 0.35); rise("#s4 .say h2", 9.6); rise("#s4 .say .sub:not(#s4-diff)", 10.2);
+      show(["#d0", "#d1", "#d2"], ["#l0", "#l1", "#l2"], 9.4, 12.3, 0.5);
+      // Then what changed: the last date minus the first.
+      tl.set("#d3", { opacity: 0 }, 0); tl.set("#l3", { opacity: 0.3 }, 0); tl.set("#s4-diff", { opacity: 0 }, 0);
+      tl.set(["#d0", "#d1", "#d2"], { opacity: 0 }, 12.4); tl.set(["#l0", "#l1", "#l2"], { opacity: 0.3 }, 12.4);
+      tl.set("#d3", { opacity: 1 }, 12.4); tl.set("#l3", { opacity: 1 }, 12.4); rise("#s4-diff", 12.4, 0.35);
+      rise("#s5 .frame", 14, 0.35); rise("#s5 .say h2", 14.2); rise("#s5 .say .sub", 14.9);
+      show(["#c0", "#c1"], ["#k0", "#k1"], 14, 17.8, 0.6);
 
-      rise("#s6a h2", 19.1, 0.4); rise("#s6a .sub", 19.2, 0.4);
-      rise("#s6b h2", 21.4, 0.4); rise("#s6b .sub", 21.5, 0.4);
+      rise("#s6a h2", 17.85, 0.35); rise("#s6a .sub", 17.95, 0.35);
+      rise("#s6b h2", 19.75, 0.35); rise("#s6b .sub", 19.85, 0.35);
+      rise("#s6c h2", 21.7, 0.35); rise("#s6c .sub", 21.8, 0.35);
 
+      tl.fromTo("#poster", { opacity: 0, x: 80 }, { opacity: 1, x: 0, duration: 0.7, ease: "power3.out" }, 23.7); tl.to("#poster", { y: -260, duration: 3.4, ease: "none" }, 23.7);
       rise("#s7-k", 23.65, 0.4); tl.fromTo("#s7-n", { opacity: 0, scale: 0.7 }, { opacity: 1, scale: 1, duration: 0.6, ease: "back.out(1.6)" }, 23.7); rise("#s7-h", 23.9); rise("#s7-sub", 24.5); leave("#s7", 26.85);
       tl.fromTo("#logo-b", { opacity: 0, scale: 0.8 }, { opacity: 1, scale: 1, duration: 0.45, ease: "power3.out" }, 27.12); rise("#s8 h2", 27.15, 0.4); rise("#s8-sub", 27.3, 0.4); rise("#s8 .credit", 27.2, 0.4);
       tl.to("#scrim-c", { opacity: 1, duration: 0.5 }, 27.1);

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Blinking Sky">
+  <!-- An eye whose pupil is a star: the eye that blinks, the sky it watches. The small dot is what moved. -->
+  <path d="M40 262 Q256 42 472 262 Q256 482 40 262 Z" fill="none" stroke="#ffffff" stroke-width="24" stroke-linejoin="round"/>
+  <path d="M256 178 C262 234 284 256 340 262 C284 268 262 290 256 346 C250 290 228 268 172 262 C228 256 250 234 256 178 Z" fill="#ffffff"/>
+  <circle cx="414" cy="128" r="19" fill="#ffffff"/>
+</svg>

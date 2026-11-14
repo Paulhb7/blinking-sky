@@ -280,7 +280,7 @@ export default function App() {
     const d = target?.dwarf, type = d?.type ?? d?.knownType, hasDip = Boolean(d && d.dip !== "none" && d.snr >= 5);
     const head = (note: string) => `<b>3D view</b><em>${note}</em>`;
     if (target?.id === "barnard") { look = { kind: "star", temperature: 3200, methane: 0, brightness: 1, seed: 3 }; caption = head("Illustration · not an image") + "<span>Red dwarf star, about 3,200 K</span>"; }
-    else if (target?.solar) { look = { kind: "unknown", temperature: 200, methane: 0, brightness: 1, seed: hashSeed(target.id) }; caption = head("Placeholder · not an image") + `<span>${target.solar.kind === "comet" ? "A comet" : target.solar.kind === "centaur" ? "A centaur" : target.solar.kind === "trojan" ? "A Jupiter trojan" : "An asteroid"}, ${Number(target.solar.sunDistanceAu).toFixed(1)} au from the Sun</span>`; }
+    else if (target?.solar) { look = { kind: target.solar.kind === "comet" ? "comet" : "rock", temperature: 200, methane: 0, brightness: 1, seed: hashSeed(target.id) % 97 }; caption = head("Illustration · the real shape is not known") + `<span>${target.solar.kind === "comet" ? "A comet" : target.solar.kind === "centaur" ? "A centaur" : target.solar.kind === "trojan" ? "A Jupiter trojan" : "An asteroid"}, ${Number(target.solar.sunDistanceAu).toFixed(1)} au from the Sun</span>`; }
     else if (target?.group === "variable") {
       // A young star: the illustration glows with the brightness measured at the date on screen.
       const fluxes = target.frames.filter((f) => f.kind === "date" && f.flux).map((f) => f.flux![0]), top = Math.max(1, ...fluxes);

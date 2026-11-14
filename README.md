@@ -1,5 +1,7 @@
 # Blinking Sky
 
+![Blinking Sky](submission/logo/blinking-sky-lockup.png)
+
 Outil web public pour regarder les images du télescope SPHEREx de la NASA et voir ce qui change : entre deux dates (ce qui bouge) et entre deux couleurs (de quoi c'est fait). Projet du NASA Space Apps Challenge 2026, défi « Planet X and SPHEREx ».
 
 L'interface est en anglais. Ce README et le journal sont en français.
