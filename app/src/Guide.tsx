@@ -3,7 +3,7 @@ import { ArrowRight, Play, RotateCcw, X } from "lucide-react";
 import CountUp from "./reactbits/CountUp";
 
 /** The path from what is known to what you can find, told on the map in four steps. */
-type Props = { step: number; published: number; suspects: number; candidates: number; onStep: (step: number) => void; onClose: () => void; onHunt: () => void; /** shows or hides the suspects on the map */ onSuspects: (shown: boolean) => void };
+type Props = { step: number; published: number; suspects: number; candidates: number; onStep: (step: number) => void; onClose: () => void; onHunt: () => void; /** shows or hides the suspects on the map */ onSuspects: (shown: boolean) => void; /** start the replay of the selection without waiting for a click */ autoRun?: boolean };
 
 // The selection as it was run on the WISE catalog (build_queue.py): what each cut kept.
 const CUTS: { log: string; kept: number; label: string }[] = [
@@ -14,8 +14,8 @@ const CUTS: { log: string; kept: number; label: string }[] = [
 ];
 
 /** Replays the selection of the suspects: the cuts scroll by, the counts fall, then the dots appear on the map. Nothing is computed now. */
-function Selection({ suspects, onSuspects }: { suspects: number; onSuspects: (shown: boolean) => void }) {
-  const [stage, setStage] = useState(0);   // 0: not started; 1–4: cuts shown so far
+function Selection({ suspects, onSuspects, auto }: { suspects: number; onSuspects: (shown: boolean) => void; auto?: boolean }) {
+  const [stage, setStage] = useState(auto ? 1 : 0);   // 0: not started; 1–4: cuts shown so far
   useEffect(() => {
     if (stage === 0 || stage >= CUTS.length) return;
     const timer = window.setTimeout(() => setStage((s) => s + 1), 1150);
@@ -36,7 +36,7 @@ function Selection({ suspects, onSuspects }: { suspects: number; onSuspects: (sh
   );
 }
 
-export default function Guide({ step, published, suspects, candidates, onStep, onClose, onHunt, onSuspects }: Props) {
+export default function Guide({ step, published, suspects, candidates, onStep, onClose, onHunt, onSuspects, autoRun }: Props) {
   const n = (v: number) => v.toLocaleString("en-GB");
   const steps = [
     { kicker: "1 · What is known", title: "Every dot is a world SPHEREx has already named", text: `${n(published)} dwarfs around the Sun whose SPHEREx type is published: small stars in orange, brown dwarfs in red and magenta, the coldest in violet. None of them is new.` },
@@ -54,7 +54,7 @@ export default function Guide({ step, published, suspects, candidates, onStep, o
       {step === 1 && <div className="guide-cross" aria-label="The three sources that are crossed">
         <span><b>WISE</b>where to look: colour and motion</span><i>×</i><span><b>Published lists</b>what is already known</span><i>×</i><span><b>SPHEREx</b>what it is: 102 colours</span>
       </div>}
-      {step === 1 && <Selection suspects={suspects} onSuspects={onSuspects} />}
+      {step === 1 && <Selection suspects={suspects} onSuspects={onSuspects} auto={autoRun} />}
       <div className="guide-foot">
         <div className="guide-dots">{steps.map((_, i) => <button key={i} type="button" aria-label={`Step ${i + 1}`} aria-current={i === step} onClick={() => onStep(i)} />)}</div>
         {step > 0 && <button type="button" className="guide-back" onClick={() => onStep(step - 1)}>Back</button>}

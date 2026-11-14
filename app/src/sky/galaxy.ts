@@ -172,6 +172,13 @@ export class Galaxy {
     const position = new THREE.Vector3(g.position[best * 3], g.position[best * 3 + 1], g.position[best * 3 + 2]), [ra, dec] = this.toSky(position);
     return { kind: "galaxy", index: best, name: g.names[best] || `2MRS galaxy ${best}`, type: "galaxy", group: "2MASS Redshift Survey", ra, dec, distance: position.length() * 1000, measured: true, position };
   }
+  /** A galaxy of the catalog by name, as if it had been clicked. */
+  galaxyNamed(name: string): Picked | null {
+    const g = this.galaxies, k = g ? g.names.indexOf(name) : -1;
+    if (!g || k < 0) return null;
+    const position = new THREE.Vector3(g.position[k * 3], g.position[k * 3 + 1], g.position[k * 3 + 2]), [ra, dec] = this.toSky(position);
+    return { kind: "galaxy", index: k, name, type: "galaxy", group: "2MASS Redshift Survey", ra, dec, distance: position.length() * 1000, measured: true, position };
+  }
   /** The published dwarf drawn nearest to a screen point, within a few pixels. */
   dwarfAt(x: number, y: number, width: number, height: number) {
     const d = this.dwarfs; if (!d) return null;

@@ -89,7 +89,7 @@ p, h1, h2, h3, figure, dl, dd { margin: 0; }
 .home-foot p { flex-basis: 100%; font-size: 10.5px; color: var(--faint); }
 @media (max-width: 760px) { .home-steps { grid-template-columns: 1fr; } .home-top span:last-child { display: none; } }
 .app[data-screen="home"] .left, .app[data-screen="home"] .spx-panel, .app[data-screen="home"] .where, .app[data-screen="home"] .sky-overlay { display: none; }
-.app[data-presenting] .left, .app[data-presenting] .spx-panel, .app[data-presenting] .where, .app[data-presenting] .home { visibility: hidden; }
+.app[data-presenting="full"] .left, .app[data-presenting="full"] .spx-panel, .app[data-presenting] .where, .app[data-presenting] .home { visibility: hidden; }
 .left-links { display: flex; gap: 14px; font: 10px var(--font-geist-mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--faint); }
 .left-links button:hover { color: #fff; }
 .home-star { font-size: 15px; cursor: pointer; }
@@ -99,13 +99,13 @@ p, h1, h2, h3, figure, dl, dd { margin: 0; }
 .galaxy-sun { position: absolute; left: 0; top: 0; z-index: 31; display: flex; align-items: center; gap: 8px; margin: -5px 0 0 -5px; pointer-events: none; font: 10px var(--font-geist-mono); letter-spacing: 0.16em; text-transform: uppercase; color: #9df6ff; text-shadow: 0 1px 6px #000; }
 .galaxy-sun i { width: 10px; height: 10px; border-radius: 50%; border: 1px solid #9df6ff; box-shadow: 0 0 0 4px rgb(94 242 255 / 0.15), 0 0 16px rgb(94 242 255 / 0.8); animation: sun-pulse 2.4s ease-in-out infinite; }
 @keyframes sun-pulse { 50% { box-shadow: 0 0 0 9px rgb(94 242 255 / 0.05), 0 0 22px rgb(94 242 255 / 0.9); } }
-.app[data-presenting] .galaxy-sun { visibility: hidden; }
+.app[data-presenting="full"] .galaxy-sun { visibility: hidden; }
 
 /* Scale switcher and the 3D neighbourhood */
 .levels { position: absolute; left: 50%; bottom: 2.4rem; transform: translateX(-50%); z-index: 20; display: flex; gap: 2px; padding: 4px; border-radius: 999px; }
 .levels button { padding: 7px 16px; border-radius: 999px; font-size: 12px; color: rgb(255 255 255 / 0.7); white-space: nowrap; }
 .levels button:hover { color: #fff; } .levels button[aria-pressed="true"] { background: #fff; color: #04121a; font-weight: 600; }
-.app[data-screen="home"] .levels, .app[data-presenting] .levels, .app[data-presenting] .near-overlay, .app[data-presenting] .near-note { display: none; }
+.app[data-screen="home"] .levels, .app[data-presenting] .levels, .app[data-presenting="full"] .near-overlay, .app[data-presenting] .near-note { display: none; }
 .app[data-level="galaxy"] .where { display: none; }
 .near-overlay { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
 .near-overlay > * { position: absolute; left: 0; top: 0; white-space: nowrap; font: 10px var(--font-geist-mono); text-shadow: 0 1px 4px #000; }
@@ -155,7 +155,7 @@ p, h1, h2, h3, figure, dl, dd { margin: 0; }
 .sky-stage img { display: block; width: 100%; aspect-ratio: 1; image-rendering: pixelated; background: #000; outline: 1px solid rgb(255 180 84 / 0.7); outline-offset: 6px; }
 .sky-stage-label { position: absolute; left: -6px; bottom: calc(100% + 14px); font: 10px var(--font-geist-mono); color: #b5e9ee; white-space: nowrap; text-shadow: 0 1px 4px #000; }
 .sky-stage-foot { margin-top: 14px; margin-left: -6px; font: 10px var(--font-geist-mono); color: var(--faint); }
-.app[data-screen="home"] .sky-stage, .app[data-presenting] .sky-stage, .app[data-screen="home"] .sky-portrait-label, .app[data-presenting] .sky-portrait-label { display: none !important; }
+.app[data-screen="home"] .sky-stage, .app[data-presenting="full"] .sky-stage, .app[data-screen="home"] .sky-portrait-label, .app[data-presenting="full"] .sky-portrait-label { display: none !important; }
 .sky-stage-wait { display: none; place-items: center; aspect-ratio: 1; outline: 1px dashed rgb(255 180 84 / 0.5); outline-offset: 6px; background: rgb(0 0 0 / 0.55); font: 10px var(--font-geist-mono); color: var(--faint); text-align: center; padding: 12px; }
 .lg.gal { width: 6px; height: 6px; border-radius: 50%; background: #dfe7ff; box-shadow: 0 0 6px #dfe7ff; }
 .near-object.far span { display: none; } .near-object.far.named span, .near-object.far:hover span { display: inline; }
@@ -217,3 +217,7 @@ body { background: #02060b; }
 .guide-cross span { flex: 1; padding: 8px 10px; border: 1px solid var(--line); border-radius: 4px; font-size: 10.5px; line-height: 1.35; color: var(--dim); }
 .guide-cross b { display: block; font: 700 13px var(--display); color: #5ef2ff; margin-bottom: 2px; }
 .guide-cross i { align-self: center; font-style: normal; color: var(--faint); font-size: 14px; }
+
+/* During a live slide the tool is the picture: its panels stay, pushed down a little to leave room for the slide's title. */
+.app[data-presenting="live"] .left, .app[data-presenting="live"] .spx-panel { top: 6.6rem !important; bottom: 4.6rem !important; }
+.app[data-presenting="live"] .guide { bottom: 5.4rem; }

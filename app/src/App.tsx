@@ -6,7 +6,7 @@ import Landing from "./Landing";
 import CountUp from "./reactbits/CountUp";
 import GradientText from "./reactbits/GradientText";
 import Panel, { type SpherexView } from "./Panel";
-import Slides from "./deck/Slides";
+import Slides, { type Director } from "./deck/Slides";
 import { GROUPS, loadQueue, loadSpherexCatalog, readVotes, sexagesimal, writeVote, type QueueSource, type SpxCatalog, type SpxTarget, type Vote } from "./data";
 import { startLive, type LiveInput } from "./live";
 import { Sky, TELESCOPE_FOV, type Marker } from "./sky/Sky";
@@ -48,7 +48,9 @@ export default function App() {
   const [where, setWhere] = useState("");
   const params = useMemo(() => new URLSearchParams(window.location.search), []);
   const [screen, setScreen] = useState<"home" | "sky">(params.has("sky") ? "sky" : "home");
-  const [presenting, setPresenting] = useState(params.has("present"));
+  // The talk: "full" for a text slide over the turning galaxy, "live" when the slide is the tool itself.
+  const [presenting, setPresenting] = useState<"full" | "live" | null>(params.has("present") ? "full" : null);
+  const [guideRun, setGuideRun] = useState(0);
   const [level, setLevel] = useState<"galaxy" | "sky">("galaxy");
   const [hovered, setHovered] = useState<Hovered | null>(null);
   // The guided introduction: shown the first time the map opens, and again from "How it works".
@@ -182,11 +184,11 @@ export default function App() {
   }, [catalog, choose, goLive]);
   // Home: the sky drifts, wide. Entering it flies to the first field.
   useEffect(() => { sky.current?.setHome(screen === "home"); }, [screen]);
-  const enter = useCallback((then?: () => void) => { setScreen("sky"); setPresenting(false); then?.(); }, []);
+  const enter = useCallback((then?: () => void) => { setScreen("sky"); setPresenting(null); then?.(); }, []);
   // Opening the tool straight on the sky (?sky) starts on the first field; from the landing page it starts in the neighbourhood.
   useEffect(() => { if (catalog && !selected && screen === "sky" && params.has("sky")) choose("J085510.83-071442.5"); }, [catalog, selected, screen, choose, params]);
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key.toLowerCase() === "p" && !presenting && (e.target as HTMLElement | null)?.tagName !== "INPUT" && !e.metaKey && !e.ctrlKey) setPresenting(true); };
+    const onKey = (e: KeyboardEvent) => { if (e.key.toLowerCase() === "p" && !presenting && (e.target as HTMLElement | null)?.tagName !== "INPUT" && !e.metaKey && !e.ctrlKey) setPresenting("full"); };
     window.addEventListener("keydown", onKey); return () => window.removeEventListener("keydown", onKey);
   }, [presenting]);
 
@@ -259,6 +261,15 @@ export default function App() {
     const p = parsePosition(query);
     if (p) lookAt(p[0], p[1]); else setError("Type a position such as “133.795 -7.245” or “08h55m10.8s -07°14′42″”.");
   };
+  // What the talk asks of the tool: the same actions a visitor would take.
+  const direct: Director = {
+    scene: (name) => { sky.current?.show(name); },
+    clear: () => { live.current?.stop(); live.current = null; setLiveTarget(null); setSelected(""); setHovered(null); setGuide(null); setGuideRun(0); setSuspectsShown(true); },
+    galaxy: (name) => { const picked = sky.current?.galaxyNamed(name); if (picked) sky.current?.onDwarf(picked); },
+    target: (id, kind) => { setGuide(null); choose(id); if (kind) window.setTimeout(() => setView((v) => ({ ...v, kind, playing: true })), 60); },
+    selection: () => { setSuspectsShown(false); setGuide(1); setGuideRun((n) => n + 1); },
+    hunt: () => { setGuide(null); nextUnchecked(); },
+  };
   const checked = queue.filter((q) => votes[q.id]).length;
   const found = queue.filter((q) => { const v = votes[q.id]; return v?.vote === "fades" && v.R !== undefined && v.R !== null && v.R < 0.3 && (v.snr ?? 0) >= 5; }).length;
   const candidateCount = (catalog?.targets.filter((t) => t.group === "unpublished").length ?? 12);
@@ -293,7 +304,7 @@ export default function App() {
           <button type="button" onClick={() => { if (target) { setPanel(true); sky.current?.flyTo(target.geometry?.centerRaDeg ?? target.ra, target.geometry?.centerDecDeg ?? target.dec, target.id === "barnard" ? 0.45 : TELESCOPE_FOV, 1.4); } }}>Telescope view</button>
           <button type="button" onClick={() => sky.current?.wide()}>Wide sky</button>
         </div>
-        <div className="left-links"><button type="button" onClick={() => setScreen("home")}>← Home</button><button type="button" onClick={() => { setGuide(0); sky.current?.goLevel("galaxy"); }}>How it works</button><button type="button" onClick={() => setPresenting(true)}>Presentation · P</button></div>
+        <div className="left-links"><button type="button" onClick={() => setScreen("home")}>← Home</button><button type="button" onClick={() => { setGuide(0); sky.current?.goLevel("galaxy"); }}>How it works</button><button type="button" onClick={() => setPresenting("full")}>Presentation · P</button></div>
         <p className="fine">In the galaxy: drag to turn, scroll to zoom, click a dot to fly to it. At the telescope: real SPHEREx exposures, read from NASA&apos;s archive. The galaxy&apos;s shape is a model; distances marked estimated or assumed are not measurements. Data: NASA/JPL-Caltech/SPHEREx · NASA/IPAC IRSA · Gagné et al. 2026 · Gaia DR3 · CatWISE2020. Nothing you do here is sent anywhere.</p>
       </aside>
       <p className="where">{where}</p>
@@ -313,11 +324,12 @@ export default function App() {
         </ul>
         <p className="legend-foot">The galaxy&apos;s shape is a model. Hollow dots sit where they would be <b>if</b> they are cold dwarfs. Rest the pointer on a dot for a first look; click to fly there.</p>
       </aside>}
-      {guide !== null && screen === "sky" && level === "galaxy" && !presenting && !(target && panel) && <Guide step={guide} published={published?.count ?? 15739} suspects={queue.length || 382} candidates={candidateCount}
+      {guide !== null && screen === "sky" && level === "galaxy" && presenting !== "full" && !(target && panel) && <Guide key={guideRun} autoRun={guideRun > 0} step={guide} published={published?.count ?? 15739} suspects={queue.length || 382} candidates={candidateCount}
         onStep={(next) => { if (next === 1) setSuspectsShown(false); setGuide(next); }} onSuspects={setSuspectsShown} onClose={closeGuide} onHunt={() => { closeGuide(); nextUnchecked(); }} />}
-      {hovered && screen === "sky" && level === "galaxy" && !presenting && <HoverCard key={`${hovered.ra},${hovered.dec}`} hovered={hovered} />}
-      {screen === "home" && <Landing queueSize={queue.length} images="1.6 million" onEnter={() => enter()} onUnchecked={() => enter(nextUnchecked)} onPresent={() => setPresenting(true)} />}
-      {presenting && <Slides catalog={catalog} queueSize={queue.length} onClose={() => setPresenting(false)} onLaunch={() => enter()} />}
+      {hovered && screen === "sky" && level === "galaxy" && presenting !== "full" && <HoverCard key={`${hovered.ra},${hovered.dec}`} hovered={hovered} />}
+      {screen === "home" && <Landing queueSize={queue.length} images="1.6 million" onEnter={() => enter()} onUnchecked={() => enter(nextUnchecked)} onPresent={() => setPresenting("full")} />}
+      {presenting && <Slides catalog={catalog} queueSize={queue.length} direct={direct} onSlide={(_, live) => { setScreen("sky"); setPresenting(live ? "live" : "full"); }}
+        onClose={() => { setPresenting(null); setGuideRun(0); sky.current?.show("sun"); }} onLaunch={() => { setGuideRun(0); enter(); sky.current?.show("sun"); }} />}
       {target && catalog && panel && <Panel target={target} catalog={catalog} view={view} ready={target.frames.length > 0} error="" vote={votes[target.id]?.vote}
         onView={(next) => { if (next.kind) autoKind.current = false; setView((v) => ({ ...v, ...next })); }} onClose={() => setPanel(false)}
         onRecenter={() => sky.current?.flyTo(target.geometry?.centerRaDeg ?? target.ra, target.geometry?.centerDecDeg ?? target.dec, target.id === "barnard" ? 0.45 : TELESCOPE_FOV, 1.2)} onRetry={() => {}}

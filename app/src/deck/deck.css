@@ -623,3 +623,14 @@
 .pz-center.shot.small .pz-shot { width: min(980px, 100%, calc((100vh - 330px) * 16 / 9)); }
 .pz-note.under, .pz-actions.under { position: absolute; left: 0; right: 0; bottom: 56px; margin: 0; text-align: center; }
 .pz-center.shot.small { margin-top: 60px; }
+
+/* Live slides: no veil, the tool shows through and stays usable; only the bar, the title and the caption belong to the deck. */
+.pz-root.pz-live { background: linear-gradient(180deg, rgba(3, 7, 12, 0.86) 0, rgba(3, 7, 12, 0) 7.5rem, rgba(3, 7, 12, 0) calc(100% - 5.5rem), rgba(3, 7, 12, 0.88) 100%); pointer-events: none; }
+.pz-root.pz-live .pz-noise, .pz-root.pz-live .pz-glow, .pz-root.pz-live .pz-hint { display: none; }
+.pz-root.pz-live .pz-top, .pz-root.pz-live .pz-dots, .pz-root.pz-live .pz-panel, .pz-root.pz-live .pz-backdrop.open { pointer-events: auto; }
+.pz-root.pz-live .pz-slide { pointer-events: none !important; justify-content: flex-start; }
+.pz-live-top { position: absolute; top: 46px; left: 0; right: 0; text-align: center; }
+.pz-live-top span { display: block; font-family: "DM Mono", monospace; font-size: 9px; letter-spacing: 4px; text-transform: uppercase; color: var(--pz-accent); }
+.pz-live-top h2 { margin: 2px 0 0; font: 800 clamp(20px, 2.4vw, 32px) "Inter", system-ui, sans-serif; letter-spacing: -0.035em; color: var(--pz-fg); }
+.pz-live-top h2 b { color: var(--pz-accent); font-weight: 800; text-shadow: 0 0 24px rgba(94, 242, 255, 0.55); }
+.pz-live-cap { position: absolute; left: 50%; bottom: 20px; transform: translateX(-50%); width: min(880px, 78vw); margin: 0; text-align: center; font-size: 15px; line-height: 1.5; color: var(--pz-dim); text-shadow: 0 1px 8px #000; }

@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import "./deck.css";
 
-export type DeckSlide = { title: string; sub: string; body: ReactNode | ((nav: { next: () => void; active: boolean }) => ReactNode) };
-type DeckProps = { brand: [string, string]; mark: string; slides: DeckSlide[]; onClose: () => void; onLaunch: () => void };
+export type DeckSlide = { title: string; sub: string; /** the tool itself is the picture: the slide is a title and a caption over the live interface */ live?: boolean; body: ReactNode | ((nav: { next: () => void; active: boolean }) => ReactNode) };
+type DeckProps = { brand: [string, string]; mark: string; slides: DeckSlide[]; onClose: () => void; onLaunch: () => void; onSlide?: (index: number, live: boolean) => void };
 
 export const Kicker = ({ children }: { children: ReactNode }) => <div className="pz-kicker"><i />{children}<i /></div>;
 export const SectionTitle = ({ eyebrow, pre, accent, post }: { eyebrow: string; pre?: string; accent: string; post?: string }) => (
@@ -10,7 +10,7 @@ export const SectionTitle = ({ eyebrow, pre, accent, post }: { eyebrow: string; 
 );
 
 /** A full-screen talk over the live sky: arrows, space or the wheel to move, 1-9 to jump, M for the menu, Esc to leave. */
-export function Deck({ brand, mark, slides, onClose, onLaunch }: DeckProps) {
+export function Deck({ brand, mark, slides, onClose, onLaunch, onSlide }: DeckProps) {
   const [slide, setSlide] = useState(0);
   const [menu, setMenu] = useState(false);
   const go = useCallback((i: number) => setSlide(Math.max(0, Math.min(slides.length - 1, i))), [slides.length]);
@@ -31,9 +31,11 @@ export function Deck({ brand, mark, slides, onClose, onLaunch }: DeckProps) {
     window.addEventListener("keydown", onKey, true);
     return () => window.removeEventListener("keydown", onKey, true);
   }, [slide, slides.length, menu, go, onClose]);
+  const live = Boolean(slides[slide].live);
+  useEffect(() => { onSlide?.(slide, live); }, [slide, live]); // eslint-disable-line react-hooks/exhaustive-deps
   const lastWheel = useRef(0);
   const onWheel = (e: React.WheelEvent) => {
-    if (menu || Math.abs(e.deltaY) < 12) return;
+    if (menu || live || Math.abs(e.deltaY) < 12) return;   // over a live slide the wheel zooms the map
     const now = Date.now();
     if (now - lastWheel.current < 800) return;
     lastWheel.current = now; go(slide + (e.deltaY > 0 ? 1 : -1));
@@ -41,7 +43,7 @@ export function Deck({ brand, mark, slides, onClose, onLaunch }: DeckProps) {
   const state = (i: number) => (i === slide ? "on" : i < slide ? "past" : "next");
   const name = <span>{brand[0]}<b>{brand[1]}</b></span>;
   return (
-    <div className="pz-root" onWheel={onWheel} role="dialog" aria-label="Presentation">
+    <div className={`pz-root${live ? " pz-live" : ""}`} onWheel={onWheel} role="dialog" aria-label="Presentation">
       <div className="pz-noise" aria-hidden="true" /><div className="pz-glow" aria-hidden="true" />
       <div className="pz-top">
         <div className="pz-brand">{name}

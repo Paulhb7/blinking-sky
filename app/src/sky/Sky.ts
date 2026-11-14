@@ -254,6 +254,16 @@ export class Sky {
       if (spec) this.flyTo(ra, dec, TELESCOPE_FOV, 1.8);
     }
   }
+  /** Named views of the galaxy map, for the talk: turning slowly from outside, among the galaxies, the whole Milky Way, around the Sun. */
+  show(name: "orbit" | "galaxies" | "milkyway" | "sun", seconds = 2.6) {
+    if (this.mode !== "galaxy") this.setMode("galaxy");
+    this.flight = null; this.staged = false; this.bound = false; this.galaxy.home = name === "orbit";
+    if (name === "orbit") this.galaxy.go(GALACTIC_CENTRE.clone().multiplyScalar(0.8), 34, seconds);
+    else if (name === "galaxies") this.galaxy.go(new THREE.Vector3(), 130000, seconds);
+    else if (name === "milkyway") this.galaxy.go(GALACTIC_CENTRE.clone().multiplyScalar(0.8), 38, seconds);
+    else this.galaxy.go(new THREE.Vector3(), 0.1, seconds);
+  }
+  galaxyNamed(name: string) { return this.galaxy.galaxyNamed(name); }
   /** Where the next flight in the galaxy should end, for an object that is not among the listed dots. */
   aimAt(ra: number, dec: number, parsecs: number) { this.destination = this.galaxy.direction(ra, dec).multiplyScalar(parsecs * 1e-3); }
 
