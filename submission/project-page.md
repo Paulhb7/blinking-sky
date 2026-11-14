@@ -39,16 +39,17 @@ The headings follow the six questions of the form, in order. The images are show
 
 **What does it do?**
 
-Blinking Sky lets anyone watch the sky change in real SPHEREx images, on three time scales: hours for the Solar System, months and years for our nearest neighbours, and no change at all for distant galaxies, which is the reference. It has three parts.
+Blinking Sky lets anyone watch the sky change in real SPHEREx images. Things move: asteroids in hours, our nearest neighbours in months and years. Things change brightness: young stars flare up between two passes. And distant galaxies do not change at all, which is the reference. It has three parts.
 
-1. A blink viewer. For any position, the visitor blinks between dates to see what moves, and between two colours (3.83–5.0 µm and the methane band at 3.15–3.50 µm) to see what the object is made of.
+1. A blink viewer. For any position, the visitor blinks between dates to see what moves or changes brightness, with a difference image (last date minus first) and the brightness measured at each date; and between two colours (3.83–5.0 µm and the methane band at 3.15–3.50 µm) to see what the object is made of.
 2. A map with real distances: the Sun, the Earth, the planets and 7,083 asteroids and comets placed where they were on the day SPHEREx saw them; 15,739 ultracool dwarfs already typed by SPHEREx; 43,463 galaxies. Clicking any dot opens its real images.
 3. A review queue of 382 red, moving WISE sources that nobody has examined in SPHEREx. The visitor looks at one, says what they see, then sees the measurement.
 
 Try it in one minute at https://blinking-sky.vercel.app (“Open the sky”):
 
 - Type “Ceres” in the search box: six real exposures a few hours apart. The stars stay, Ceres moves.
-- Open “WISE 0855−0714” and blink “Across dates”: the coldest known brown dwarf, 7 light-years away, shifts between May 2025 and May 2026.
+- Open “WISE 0855−0714” and blink “Across dates”: the coldest known brown dwarf, 7 light-years away, shifts between May 2025 and May 2026. Click “What changed”: the difference of the two dates shows where it left (black) and where it arrived (white).
+- Open a star under “Stars that changed brightness”: the tool reads about 190 exposures live and measures it at each date. The star in Vela goes from 15.9 to 70.4 mJy at 4 µm in one year, 4.4 times brighter.
 - Open a source under “Candidates · no publication found” and blink “Across colours”: it is there at 4 µm and gone in the methane band.
 
 ![Ceres, read live: the stars stay, the asteroid moves](images/05-solar-system-ceres.png)
@@ -56,6 +57,12 @@ Try it in one minute at https://blinking-sky.vercel.app (“Open the sky”):
 
 ![WISE 0855−0714 across three dates](images/07-brown-dwarf-wise0855-dates.png)
 *WISE 0855−0714 across three dates*
+
+![What changed: the last date minus the first. The brown dwarf left the black spot and arrived on the white one](images/15-what-changed-wise0855.png)
+*What changed: the last date minus the first. The brown dwarf left the black spot and arrived on the white one*
+
+![A young star in Vela, 4.4 times brighter in May 2026 than in May 2025, measured live](images/14-star-that-brightened.png)
+*A young star in Vela, 4.4 times brighter in May 2026 than in May 2025, measured live*
 
 
 **How does it work?**
@@ -151,7 +158,7 @@ The visitor zooms from one scale to the next without leaving the map.
 - Honest words. Every source is called a candidate. “No publication found” means absent from the catalogues and lists we searched, not “unknown”.
 - Privacy. Nothing a visitor does is sent anywhere; votes stay in their browser.
 - Access. Each object costs a few megabytes to load, in English, with a guided introduction.
-- Limits, stated in the tool. SPHEREx pixels are 6.15″ wide, so only the fastest neighbours move visibly between two passes; for most candidates the evidence is the colour blink and the motion comes from WISE. The test is reliable to W2 ≈ 15.2, works about one time in two down to W2 = 16.0, and does not work in the Galactic plane. Votes are not collected yet.
+- Limits, stated in the tool. The difference image and the brightness at each date are quick looks made in the browser, not final photometry. SPHEREx pixels are 6.15″ wide, so only the fastest neighbours move visibly between two passes; for most candidates the evidence is the colour blink and the motion comes from WISE. The test is reliable to W2 ≈ 15.2, works about one time in two down to W2 = 16.0, and does not work in the Galactic plane. Votes are not collected yet.
 
 ---
 

@@ -106,3 +106,11 @@
   .spx-sheet h3, .spx-sheet-dl dt, .spx-sheet footer, .spx-sheet .spx-small, .spx-sheet-figs figcaption, .spx-sheet-status { color: #444; }
   .spx-sheet .spx-axis { fill: #333; } .spx-sheet .spx-pt { fill: #0b5; } .spx-sheet .spx-err { stroke: #777; } .spx-sheet .spx-template { stroke: #c60; } .spx-sheet .spx-grid { stroke: #ddd; }
 }
+
+/* Brightness at each date, for fields measured in this browser. */
+.spx-light { display: grid; gap: 5px; margin: 8px 0 4px; }
+.spx-light-title { font-size: 11px; color: rgb(255 255 255 / 0.6); }
+.spx-light-row { display: grid; grid-template-columns: 78px 1fr 74px; align-items: center; gap: 8px; font: 11px var(--font-geist-mono, monospace); color: rgb(255 255 255 / 0.75); }
+.spx-light-row i { height: 8px; border-radius: 4px; background: rgb(255 255 255 / 0.08); overflow: hidden; }
+.spx-light-row b { display: block; height: 100%; border-radius: 4px; background: #5ef2ff; }
+.spx-light-row span:last-child { text-align: right; }

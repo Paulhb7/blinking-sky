@@ -10,8 +10,10 @@ export type SpxFrame = {
   images: number; band?: [number, number]; date?: string; dateRange?: [string, string];
   /** Where the moving body is in this frame: column and row on the grid. */
   at?: [number, number];
+  /** Brightness of the source at this date, 3.83–5 µm: flux and 1σ error, µJy (in-browser quick look). */
+  flux?: [number, number];
 };
-export type SpxGroup = "start" | "solar" | "unpublished" | "blind" | "published" | "rejected" | "queue" | "position";
+export type SpxGroup = "start" | "variable" | "solar" | "unpublished" | "blind" | "published" | "rejected" | "queue" | "position";
 export type SpxDeep = {
   note: string; z: number | null; J: number | null; zJ: number | null; JW2: number | null; shape: string | null;
   sep: number | null; sep2015: number | null; pmCatwise: [number, number]; pmOptical: [number, number, number] | null; optical?: string; wise?: string;
@@ -51,6 +53,7 @@ export type SpxCatalog = {
 
 export const GROUPS: { id: SpxGroup; label: string; hint: string }[] = [
   { id: "start", label: "Start here", hint: "Known objects: check that the tool shows what is expected." },
+  { id: "variable", label: "Stars that changed brightness", hint: "Young stars that were brighter at one SPHEREx pass than at another. Read live from NASA's archive: blink the dates." },
   { id: "solar", label: "Solar System · moves in hours", hint: "Comets and asteroids crossing a fixed patch of sky, one real exposure per frame." },
   { id: "unpublished", label: "Candidates · no publication found", hint: "Methane dip in SPHEREx, motion in CatWISE, nothing found in the lists searched." },
   { id: "blind", label: "Blind test", hint: "Picked by the same selection, then found to be already typed from a spectrum." },
@@ -187,4 +190,34 @@ export async function loadSolarFrames(basePath: string, data: SolarData, id: str
   const response = await fetch(`${basePath}/data/solar/frames-${Math.floor(k / data.chunk)}.json`);
   if (k < 0 || !response.ok) throw new Error("No image list for this body");
   return (await response.json())[id] ?? [];
+}
+
+/** Known young stars whose brightness changed between two SPHEREx passes, in our earlier measurements. They have no
+ * prepared stack: the tool reads them live, so the visitor checks the change on the exposures themselves. */
+export const VARIABLES: { id: string; name: string; ra: number; dec: number; W1: number; W2: number; blurb: string }[] = [
+  { id: "var-vela", name: "2MASS J08482227-4241152", ra: 132.0928, dec: -42.68755, W1: 10.43, W2: 9.05,
+    blurb: "A young star in Vela, still inside its cloud. In our earlier measurements it was about four times brighter at 4 µm in May 2026 than six months before. Blink the dates and read the brightness at each one." },
+  { id: "var-crux", name: "AGAL G300.323-00.199", ra: 187.1166, dec: -62.95387, W1: 9.45, W2: 7.70,
+    blurb: "A young star in a dense clump of gas in the Southern Cross. In our earlier measurements it was more than twice as bright at 2–5 µm in July 2026 as a year before. Blink the dates and read the brightness at each one." },
+];
+
+/** The difference between two frames that share one stretch: last minus first. The 8-bit asinh display is inverted,
+ * so this is a picture of what changed, not photometry. Grey: no change. White: brighter or arrived. Black: fainter or left. */
+export async function differenceImage(first: string, last: string): Promise<string> {
+  const load = (src: string) => new Promise<HTMLImageElement>((resolve, reject) => { const i = new Image(); i.onload = () => resolve(i); i.onerror = reject; i.src = src; });
+  const [a, b] = await Promise.all([load(first), load(last)]);
+  const w = a.naturalWidth, h = a.naturalHeight, k = Math.asinh(5);
+  const pixels = (img: HTMLImageElement) => { const c = document.createElement("canvas"); c.width = w; c.height = h; const x = c.getContext("2d")!; x.drawImage(img, 0, 0, w, h); return x.getImageData(0, 0, w, h).data; };
+  const pa = pixels(a), pb = pixels(b);
+  const out = document.createElement("canvas"); out.width = w; out.height = h;
+  const ctx = out.getContext("2d")!, data = ctx.createImageData(w, h), gain = 6, norm = Math.asinh(gain);
+  for (let i = 0; i < w * h; i++) {
+    const va = pa[i * 4] / 255, vb = pb[i * 4] / 255;
+    // A pixel that is black in either frame is missing or below the floor there: no difference is drawn.
+    const d = va === 0 || vb === 0 ? 0 : (Math.sinh(vb * k) - Math.sinh(va * k)) / 5;
+    const g = Math.round(255 * Math.max(0, Math.min(1, 0.5 + 0.5 * Math.asinh(d * gain) / norm)));
+    data.data[i * 4] = data.data[i * 4 + 1] = data.data[i * 4 + 2] = g; data.data[i * 4 + 3] = 255;
+  }
+  ctx.putImageData(data, 0, 0);
+  return out.toDataURL("image/png");
 }

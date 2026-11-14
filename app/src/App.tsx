@@ -7,7 +7,7 @@ import CountUp from "./reactbits/CountUp";
 import GradientText from "./reactbits/GradientText";
 import Panel, { type SpherexView } from "./Panel";
 import Slides, { type Director } from "./deck/Slides";
-import { GROUPS, loadQueue, loadSolar, loadSolarFrames, loadSpherexCatalog, readVotes, sexagesimal, writeVote, type QueueSource, type SolarData, type SpxCatalog, type SpxTarget, type Vote } from "./data";
+import { GROUPS, VARIABLES, differenceImage, loadQueue, loadSolar, loadSolarFrames, loadSpherexCatalog, readVotes, sexagesimal, writeVote, type QueueSource, type SolarData, type SpxCatalog, type SpxTarget, type Vote } from "./data";
 import { startLive, startMover, type LiveInput } from "./live";
 import { Sky, TELESCOPE_FOV, type Marker } from "./sky/Sky";
 import { photometricDistance, setRelation, type GalaxyObject, type SolarBody } from "./sky/galaxy";
@@ -70,7 +70,18 @@ export default function App() {
 
   const selectedRef = useRef(""); selectedRef.current = selected;
   const prepared = useMemo(() => catalog?.targets.find((t) => t.id === selected) ?? null, [catalog, selected]);
-  const target = liveTarget && liveTarget.id === selected ? liveTarget : prepared;
+  const base = liveTarget && liveTarget.id === selected ? liveTarget : prepared;
+  // What changed between the first and the last date, as one more frame: last minus first.
+  const [diff, setDiff] = useState<{ id: string; first: string; last: string; image: string; label: string } | null>(null);
+  const dated = base?.frames.filter((f) => f.kind === "date") ?? [], firstDate = dated[0], lastDate = dated[dated.length - 1];
+  useEffect(() => {
+    if (!base || dated.length < 2 || !firstDate || !lastDate) { setDiff(null); return; }
+    let stale = false;
+    differenceImage(firstDate.image, lastDate.image).then((image) => { if (!stale) setDiff({ id: base.id, first: firstDate.image, last: lastDate.image, image, label: `Difference · ${lastDate.label} minus ${firstDate.label}` }); }).catch(() => {});
+    return () => { stale = true; };
+  }, [base?.id, firstDate?.image, lastDate?.image]); // eslint-disable-line react-hooks/exhaustive-deps
+  const target = useMemo(() => base && diff && diff.id === base.id && diff.first === firstDate?.image && diff.last === lastDate?.image
+    ? { ...base, frames: [...base.frames, { id: "diff", kind: "date" as const, label: diff.label, image: diff.image, images: 0 }] } : base, [base, diff, firstDate?.image, lastDate?.image]);
 
   useEffect(() => {
     if (!host.current) return;
@@ -85,7 +96,7 @@ export default function App() {
         setRelation(meta.absoluteW2); s.setGalaxyFrame(frame); s.setDwarfs(b, meta); setPublished({ count: meta.count, measured: meta.measured, estimated: meta.estimated });
         return Promise.all([fetch(`${BASE}/data/galaxies.bin`).then((r) => r.arrayBuffer()), fetch(`${BASE}/data/galaxies.json`).then((r) => r.json())]);
       }).then(([b, meta]) => { s.setGalaxies(b, meta); setGalaxyCount(meta.count); return loadSolar(BASE); }).then((data) => { s.setSolar(data); setSolar(data); }).catch(() => {});
-    Promise.all([loadSpherexCatalog(BASE), loadQueue(BASE)]).then(([c, q]) => { setCatalog(c); setQueue(q.sources); }).catch((e) => setError(String(e.message ?? e)));
+    Promise.all([loadSpherexCatalog(BASE), loadQueue(BASE)]).then(([c, q]) => { c.targets.push(...VARIABLES.map((v): SpxTarget => ({ id: v.id, name: v.name, group: "variable", ra: v.ra, dec: v.dec, blurb: v.blurb, frames: [], stacked: false }))); setCatalog(c); setQueue(q.sources); }).catch((e) => setError(String(e.message ?? e)));
     return () => { live.current?.stop(); s.dispose(); sky.current = null; };
   }, []);
 
@@ -118,6 +129,7 @@ export default function App() {
   const choose = useCallback((id: string) => {
     const next = catalog?.targets.find((t) => t.id === id);
     if (!next) return;
+    if (next.group === "variable") { const v = VARIABLES.find((x) => x.id === id); setOpen("variable"); return goLiveRef.current?.({ id, name: next.name, ra: next.ra, dec: next.dec, group: "variable", W1: v?.W1, W2: v?.W2, blurb: next.blurb, published: "Known young star; the change of brightness is ours to check", knownType: "star" }); }
     live.current?.stop(); live.current = null; setLiveTarget(null);
     const kind = defaultKind(next);
     setSelected(id); setPanel(true); setOpen(next.group);
@@ -131,6 +143,7 @@ export default function App() {
     sky.current?.flyTo(next.geometry?.centerRaDeg ?? next.ra, next.geometry?.centerDecDeg ?? next.dec, next.id === "barnard" || next.solar ? field : TELESCOPE_FOV);
   }, [catalog]);
 
+  const goLiveRef = useRef<((input: LiveInput) => void) | null>(null);
   const goLive = useCallback((input: LiveInput) => {
     live.current?.stop();
     autoKind.current = true;
@@ -139,6 +152,7 @@ export default function App() {
     sky.current?.flyTo(input.ra, input.dec, TELESCOPE_FOV);
     live.current = startLive(input, (t) => setLiveTarget(t));
   }, []);
+  goLiveRef.current = goLive;
   // A small body clicked on the Solar System map: fly to where it was, and read the exposures of its visit.
   const chooseBody = useCallback((body: SolarBody) => {
     const prepared = Object.keys(PREPARED_BODY).find((k) => PREPARED_BODY[k] === body.id);
@@ -223,12 +237,15 @@ export default function App() {
   // While a live field builds up, show the colour frames as soon as they exist and keep the frame index valid.
   useEffect(() => {
     if (!target) return;
+    // A live field opens on its two colours as soon as both exist, and starts blinking; a variable star opens on its dates.
+    if (target.live && autoKind.current) {
+      const variable = target.group === "variable";
+      const enough = variable ? target.frames.filter((f) => f.kind === "date" && f.id !== "diff").length > 1 : target.frames.filter((f) => f.kind === "colour").length > 1;
+      if (enough) { autoKind.current = false; const kind = variable ? "date" as const : "colour" as const; setView((v) => ({ ...v, kind, frame: firstFrame(target, kind), playing: true })); return; }
+    }
     setView((v) => {
       const has = (k: "date" | "colour") => target.frames.some((f) => f.kind === k);
       let kind = v.kind;
-      // A live field opens on its two colours as soon as both exist, and starts blinking.
-      const both = target.frames.filter((f) => f.kind === "colour").length > 1;
-      if (target.live && autoKind.current && both) { autoKind.current = false; return { ...v, kind: "colour", frame: firstFrame(target, "colour"), playing: true }; }
       if (!has(kind)) kind = has("colour") && !target.live ? "colour" : has("date") ? "date" : "colour";
       const frame = target.frames[v.frame]?.kind === kind ? v.frame : firstFrame(target, kind);
       return kind === v.kind && frame === v.frame ? v : { ...v, kind, frame };
@@ -236,7 +253,7 @@ export default function App() {
   }, [target]);
   useEffect(() => {
     if (!view.playing || !target) return;
-    const frames = target.frames.map((f, i) => ({ f, i })).filter(({ f }) => f.kind === view.kind).map(({ i }) => i);
+    const frames = target.frames.map((f, i) => ({ f, i })).filter(({ f }) => f.kind === view.kind && f.id !== "diff").map(({ i }) => i);
     if (frames.length < 2) return;
     const timer = window.setInterval(() => setView((v) => ({ ...v, frame: frames[(frames.indexOf(v.frame) + 1) % frames.length] })), 1100);
     return () => window.clearInterval(timer);
@@ -264,6 +281,12 @@ export default function App() {
     const head = (note: string) => `<b>3D view</b><em>${note}</em>`;
     if (target?.id === "barnard") { look = { kind: "star", temperature: 3200, methane: 0, brightness: 1, seed: 3 }; caption = head("Illustration · not an image") + "<span>Red dwarf star, about 3,200 K</span>"; }
     else if (target?.solar) { look = { kind: "unknown", temperature: 200, methane: 0, brightness: 1, seed: hashSeed(target.id) }; caption = head("Placeholder · not an image") + `<span>${target.solar.kind === "comet" ? "A comet" : target.solar.kind === "centaur" ? "A centaur" : target.solar.kind === "trojan" ? "A Jupiter trojan" : "An asteroid"}, ${Number(target.solar.sunDistanceAu).toFixed(1)} au from the Sun</span>`; }
+    else if (target?.group === "variable") {
+      // A young star: the illustration glows with the brightness measured at the date on screen.
+      const fluxes = target.frames.filter((f) => f.kind === "date" && f.flux).map((f) => f.flux![0]), top = Math.max(1, ...fluxes);
+      look = { kind: "star", temperature: 3600, methane: 0, brightness: frame?.flux ? Math.max(0.12, Math.min(1, frame.flux[0] / top)) : 1, seed: hashSeed(target.id) };
+      caption = head("Illustration · not an image") + "<span>A young star: its glow follows the brightness measured at each date</span>";
+    }
     else if (target && type === "galaxy") { look = { kind: "galaxy", temperature: 0, methane: 0, brightness: 1, seed: hashSeed(target.id) }; caption = head("Illustration · not an image") + "<span>A galaxy: billions of stars, far outside the Milky Way</span>"; }
     else if (target && d && target.group !== "rejected" && (hasDip || type)) {
       // Drawn from what is known: the type sets the temperature and colour, the methane index the bands.
@@ -279,7 +302,7 @@ export default function App() {
       caption = head("Not identified · placeholder, not an image") + `<span>${target.live && !target.live.finished ? "Measuring: its colour and bands appear if methane shows up" : target.group === "rejected" ? "Rejected: not a cold dwarf" : "No methane dip measured: a star or a galaxy, type unknown"}</span>`;
     }
     s.setPortrait(look, caption);
-  }, [target?.id, target?.solar, target?.dwarf?.dip, target?.dwarf?.R, target?.dwarf?.type, target?.dwarf?.knownType, target?.dwarf?.snr, target?.group, target?.live?.finished, frame?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [target?.id, target?.solar, target?.dwarf?.dip, target?.dwarf?.R, target?.dwarf?.type, target?.dwarf?.knownType, target?.dwarf?.snr, target?.group, target?.live?.finished, frame?.id, frame?.flux?.[0]]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     const measure = () => sky.current?.setInsets({ left: (leftRef.current?.offsetWidth ?? 0) + 28, right: panel && target && window.innerWidth > 900 ? Math.min(400, window.innerWidth - 48) + 28 : 0 });
     measure(); window.addEventListener("resize", measure); return () => window.removeEventListener("resize", measure);
@@ -324,7 +347,7 @@ export default function App() {
         <header>
           <p className="eyebrow">NASA SPHEREx · real images</p>
           <h1>Blinking <GradientText colors={["#5ef2ff", "#d6fbff", "#00b8d9", "#5ef2ff"]} animationSpeed={8} className="brand-accent">Sky</GradientText></h1>
-          <p className="lead">The infrared sky, seen again every six months in 102 colours. Blink two dates to see what moves. Blink two colours to see what it is made of.</p>
+          <p className="lead">The infrared sky, seen again every six months in 102 colours. Blink two dates to see what moves or changes brightness. Blink two colours to see what it is made of.</p>
         </header>
         <button type="button" className="primary" onClick={nextUnchecked} disabled={!queue.length}><Shuffle size={14} /> Show me one nobody has checked</button>
         <p className="count">{queue.length ? <><CountUp key={queue.length - checked} to={queue.length - checked} from={Math.max(0, queue.length - checked - 40)} duration={0.9} /> unchecked sources · you have looked at {checked}{found ? <> · <b>{found} new candidate{found > 1 ? "s" : ""} found by you</b></> : null}</> : "Loading the review queue…"}</p>

@@ -41,7 +41,10 @@ export function startLive(input: LiveInput, onUpdate: (target: SpxTarget) => voi
         const end = seasons[i + 1] ?? Infinity, part = lw.filter((x) => x.mjd >= start && x.mjd < end);
         if (part.length < 4) return;
         const mjds = part.map((x) => x.mjd).sort((a, b) => a - b);
-        frames.push({ id: `date${i}`, kind: "date", label: dayLabel(date(mjds[mjds.length >> 1])), date: date(mjds[mjds.length >> 1]), dateRange: [date(mjds[0]), date(mjds[mjds.length - 1])], images: part.length, band: [3.83, 5], image: render(stackWindows(part.map((x) => x.w)), lo, hi) });
+        // Brightness at this date: inverse-variance mean of the single-exposure fluxes at 3.83–5 µm.
+        let sw = 0, sf = 0; for (const p of points) if (p.mjd >= start && p.mjd < end && p.wave >= BANDS.LW[0] && p.wave < BANDS.LW[1] && p.badFraction < 0.3 && Number.isFinite(p.flux) && p.error > 0) { const wgt = 1 / (p.error * p.error); sw += wgt; sf += wgt * p.flux; }
+        const flux: [number, number] | undefined = sw > 0 ? [sf / sw, ERROR_SCALE / Math.sqrt(sw)] : undefined;
+        frames.push({ flux, id: `date${i}`, kind: "date", label: dayLabel(date(mjds[mjds.length >> 1])), date: date(mjds[mjds.length >> 1]), dateRange: [date(mjds[0]), date(mjds[mjds.length - 1])], images: part.length, band: [3.83, 5], image: render(stackWindows(part.map((x) => x.w)), lo, hi) });
       });
       frames.push({ id: "lw", kind: "colour", label: "3.83–5.0 µm", images: lw.length, band: [3.83, 5], image: render(all, lo, hi) });
       if (ch4.length >= 4) frames.push({ id: "ch4", kind: "colour", label: "3.15–3.50 µm · methane band", images: ch4.length, band: [3.15, 3.5], image: render(stackWindows(ch4.map((x) => x.w)), lo, hi) });

@@ -10,11 +10,11 @@ export type SpherexView = { kind: "date" | "colour"; frame: number; playing: boo
 const CHIP: Record<string, [string, string]> = {
   start: ["Known object", "known"], unpublished: ["Candidate · not confirmed", "cand"], blind: ["Blind test · already typed", "known"],
   published: ["Candidate · published without a spectrum", "cand"], rejected: ["Rejected · false dip", "off"],
-  queue: ["Unchecked source", "cand"], position: ["Your position", "known"], solar: ["Solar System · it moves", "known"],
+  queue: ["Unchecked source", "cand"], position: ["Your position", "known"], solar: ["Solar System · it moves", "known"], variable: ["Known star · its brightness changed", "known"],
 };
 const monthLabel = (mjd: number) => new Date((mjd - 40587) * 86400000).toLocaleDateString("en-GB", { month: "short", year: "numeric", timeZone: "UTC" });
 const fmt = (v: number | null | undefined, n = 2) => v === null || v === undefined || !Number.isFinite(v) ? "—" : v.toFixed(n);
-const frameCaption = (f: SpxFrame) => f.kind === "date"
+const frameCaption = (f: SpxFrame) => f.id === "diff" ? "Last date minus first date. White: brighter, or arrived. Black: fainter, or left. Grey: no change." : f.kind === "date"
   ? `${f.images === 1 ? "Single exposure" : `${f.images} exposures averaged`}${f.dateRange ? ` · ${dayLabel(f.dateRange[0])} to ${dayLabel(f.dateRange[1])}` : ""}${f.band ? ` · ${f.band[0]}–${f.band[1]} µm` : ""}`
   : `${f.images} exposures averaged · all dates · ${f.band ? `${f.band[0]}–${f.band[1]} µm` : ""}`;
 
@@ -121,6 +121,22 @@ function Sheet({ target, catalog, onClose }: { target: SpxTarget; catalog: SpxCa
   );
 }
 
+/** The brightness of the source at each date, when the exposures were measured in this browser. */
+function Brightness({ frames }: { frames: SpxFrame[] }) {
+  const dated = frames.filter((f) => f.kind === "date" && f.flux && Number.isFinite(f.flux[0]));
+  if (dated.length < 2) return null;
+  const top = Math.max(...dated.map((f) => f.flux![0])), first = dated[0].flux!, last = dated[dated.length - 1].flux!;
+  const ratio = first[0] > 0 && last[0] > 0 ? last[0] / first[0] : NaN, sigma = Math.abs(last[0] - first[0]) / Math.hypot(first[1], last[1]);
+  const flux = (v: number) => v >= 10000 ? `${(v / 1000).toFixed(1)} mJy` : `${Math.round(v).toLocaleString("en-GB")} µJy`;
+  return (
+    <div className="spx-light" aria-label="Brightness at each date">
+      <p className="spx-light-title">Brightness at 3.8–5 µm, date by date</p>
+      {dated.map((f) => <div key={f.id} className="spx-light-row"><span>{f.label}</span><i><b style={{ width: `${Math.max(2, Math.min(100, f.flux![0] / top * 100))}%` }} /></i><span>{flux(f.flux![0])}</span></div>)}
+      {Number.isFinite(ratio) && <p className="spx-note">{sigma < 3 ? "No significant change between the first and the last date." : ratio >= 1 ? `${ratio.toFixed(1)} times brighter at the last date than at the first.` : `${(1 / ratio).toFixed(1)} times fainter at the last date than at the first.`} Quick-look measurement, not final photometry.</p>}
+    </div>
+  );
+}
+
 type Props = {
   target: SpxTarget; catalog: SpxCatalog; view: SpherexView; ready: boolean; error: string; vote?: Vote;
   onView: (next: Partial<SpherexView>) => void; onClose: () => void; onRecenter: () => void; onRetry: () => void;
@@ -163,7 +179,7 @@ export default function SpherexPanel({ target, catalog, view, ready, error, vote
         <div className="spx-frames">
           {frames.map(({ f, index }) => (
             <button key={f.id} type="button" aria-pressed={view.frame === index} onClick={() => onView({ frame: index, playing: false })}>
-              <img src={f.image} alt="" /><span>{f.label}</span>
+              <img src={f.image} alt="" /><span>{f.id === "diff" ? "What changed" : f.label}</span>
             </button>
           ))}
         </div>
@@ -171,6 +187,7 @@ export default function SpherexPanel({ target, catalog, view, ready, error, vote
           <button type="button" className="spx-play" disabled={frames.length < 2 || !ready} onClick={() => onView({ playing: !view.playing })} aria-label={view.playing ? "Pause the blink" : "Blink the frames"}>{view.playing ? <Pause size={14} /> : <Play size={14} />}</button>
           <p className="spx-caption">{error ? <span role="alert">Images unavailable. <button type="button" className="spx-link" onClick={onRetry}>Retry</button></span> : !ready ? "Loading observations…" : current ? frameCaption(current) : ""}</p>
         </div>
+        {view.kind === "date" && <Brightness frames={target.frames} />}
         {view.kind === "date" && shift && target.motion && <p className="spx-note">Catalogued motion {fmt(target.motion.total)}″ per year ({target.motion.source}): {fmt(shift.arcsec, 1)}″ between the first and last date, {fmt(shift.pixels, 1)} SPHEREx pixel{shift.pixels >= 1.5 ? "s" : ""}.{shift.pixels < 0.4 ? " Too small to see by eye here: the methane band is what gives this one away." : ""}</p>}
         <div className="spx-row wrap">
           <button type="button" className="spx-btn" onClick={onRecenter}>Recenter</button>
