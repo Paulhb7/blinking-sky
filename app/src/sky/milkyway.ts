@@ -65,14 +65,14 @@ export class MilkyWay {
   readonly scene = new THREE.Scene();
   readonly camera = new THREE.PerspectiveCamera(38, 1, 0.01, 400);
   private disk = new THREE.Group();
-  private starUniforms = { uSize: { value: 0.085 }, uPx: { value: 800 }, uDense: { value: new THREE.Color("#2885ff") }, uSparse: { value: new THREE.Color("#ffa27a") }, uBright: { value: 0.5 }, uFade: { value: 1 } };
-  private cloudUniforms = { uSize: { value: 2.2 }, uPx: { value: 800 }, uTint: { value: new THREE.Color("#ffd0d6") }, uOpacity: { value: 0.03 }, uFade: { value: 1 } };
+  private starUniforms = { uSize: { value: 0.085 }, uPx: { value: 800 }, uDense: { value: new THREE.Color("#2885ff") }, uSparse: { value: new THREE.Color("#ffa27a") }, uBright: { value: 0.3 }, uFade: { value: 1 } };
+  private cloudUniforms = { uSize: { value: 2.2 }, uPx: { value: 800 }, uTint: { value: new THREE.Color("#ffd0d6") }, uOpacity: { value: 0.026 }, uFade: { value: 1 } };
   private sun = new THREE.Vector3(-MILKY_WAY.r0, MILKY_WAY.z0, 0);
   private home = { position: new THREE.Vector3(9, 13, 25), target: new THREE.Vector3(5.5, 0, 0) };
   /** 0 on the landing page, 1 once the camera has reached the Sun. */
   dive = 0;
 
-  constructor(starCount = 170000, cloudCount = 2500) {
+  constructor(starCount = 280000, cloudCount = 3600) {
     const data = sample(starCount, cloudCount);
     const stars = new THREE.BufferGeometry();
     stars.setAttribute("position", new THREE.BufferAttribute(data.stars, 3)); stars.setAttribute("aTint", new THREE.BufferAttribute(data.tint, 1));
@@ -91,7 +91,7 @@ export class MilkyWay {
 
   update(dt: number, width: number, height: number) {
     // The disk turns toward +phi (clockwise seen from the north pole), far faster than the real 230 million years.
-    this.disk.rotation.y -= dt * 0.012; this.disk.updateMatrixWorld();
+    this.disk.rotation.y -= dt * 0.03; this.disk.updateMatrixWorld();
     const e = this.dive * this.dive * (3 - 2 * this.dive), sun = this.sunWorld();
     this.camera.aspect = width / height;
     // On wide screens the galaxy sits to the right of the text.
