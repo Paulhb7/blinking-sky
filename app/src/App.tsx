@@ -7,10 +7,10 @@ import CountUp from "./reactbits/CountUp";
 import GradientText from "./reactbits/GradientText";
 import Panel, { type SpherexView } from "./Panel";
 import Slides, { type Director } from "./deck/Slides";
-import { GROUPS, loadQueue, loadSpherexCatalog, readVotes, sexagesimal, writeVote, type QueueSource, type SpxCatalog, type SpxTarget, type Vote } from "./data";
-import { startLive, type LiveInput } from "./live";
+import { GROUPS, loadQueue, loadSolar, loadSolarFrames, loadSpherexCatalog, readVotes, sexagesimal, writeVote, type QueueSource, type SolarData, type SpxCatalog, type SpxTarget, type Vote } from "./data";
+import { startLive, startMover, type LiveInput } from "./live";
 import { Sky, TELESCOPE_FOV, type Marker } from "./sky/Sky";
-import { photometricDistance, setRelation, type GalaxyObject } from "./sky/galaxy";
+import { photometricDistance, setRelation, type GalaxyObject, type SolarBody } from "./sky/galaxy";
 import { temperatureOf, type PortraitLook } from "./sky/portrait";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -18,6 +18,9 @@ const VIEW: SpherexView = { kind: "date", frame: 0, playing: false, flagged: fal
 const shortName = (name: string) => name.replace(/^CWISE J(\d{4})\d{2}\.\d+([+-]\d{4})\d{2}\.\d$/, "J$1$2").replace("-", "−");
 const firstFrame = (t: SpxTarget, kind: "date" | "colour") => Math.max(0, t.frames.findIndex((f) => f.kind === kind));
 const defaultKind = (t: SpxTarget): "date" | "colour" => (t.motion && t.motion.total > 2 && t.frames.some((f) => f.kind === "date")) || !t.frames.some((f) => f.kind === "colour") ? "date" : "colour";
+// The three bodies prepared in advance, under their id on the Solar System map.
+const PREPARED_BODY: Record<string, string> = { "29P": "sb-29P", pallas: "sb-2", euphrosyne: "sb-31" };
+const dayOf = (mjd: number) => new Date((mjd - 40587) * 86400000).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
 const hashSeed = (s: string) => { let h = 7; for (const c of s) h = (h * 31 + c.charCodeAt(0)) % 9973; return h / 97; };
 
 /** "133.795 -7.245", "08h55m10.8s -07°14′42″" or a J designation → degrees. */
@@ -58,10 +61,14 @@ export default function App() {
   const [suspectsShown, setSuspectsShown] = useState(false);
   const closeGuide = useCallback(() => { setGuide(null); try { localStorage.setItem("blinking-sky.guide.v1", "seen"); } catch { /* storage blocked */ } }, []);
   const [galaxyCount, setGalaxyCount] = useState(0);
+  const [solar, setSolar] = useState<SolarData | null>(null);
+  // True when the galaxy map is zoomed down to the planets.
+  const [solarScale, setSolarScale] = useState(false);
   const [published, setPublished] = useState<{ count: number; measured: number; estimated: number } | null>(null);
   const live = useRef<ReturnType<typeof startLive> | null>(null);
   const autoKind = useRef(true);
 
+  const selectedRef = useRef(""); selectedRef.current = selected;
   const prepared = useMemo(() => catalog?.targets.find((t) => t.id === selected) ?? null, [catalog, selected]);
   const target = liveTarget && liveTarget.id === selected ? liveTarget : prepared;
 
@@ -71,13 +78,13 @@ export default function App() {
     if (import.meta.env.DEV) (window as unknown as { __sky: Sky }).__sky = s;
     let tick = 0;
     s.onMove = (ra, dec, fov) => { if (++tick % 12 === 0) setWhere(`${sexagesimal(ra, dec)} · field ${fov >= 1 ? fov.toFixed(0) + "°" : fov * 60 >= 1 ? (fov * 60).toFixed(1) + "′" : (fov * 3600).toFixed(0) + "″"}`); };
-    s.onLevel = setLevel;
+    s.onLevel = setLevel; s.onScale = setSolarScale;
     fetch(`${BASE}/data/stars.bin`).then((r) => r.arrayBuffer()).then((b) => s.setStars(b)).catch(() => {});
     Promise.all([fetch(`${BASE}/data/galaxy.json`).then((r) => r.json()), fetch(`${BASE}/data/spherex-dwarfs.bin`).then((r) => r.arrayBuffer()), fetch(`${BASE}/data/spherex-dwarfs.json`).then((r) => r.json())])
       .then(([frame, b, meta]) => {
         setRelation(meta.absoluteW2); s.setGalaxyFrame(frame); s.setDwarfs(b, meta); setPublished({ count: meta.count, measured: meta.measured, estimated: meta.estimated });
         return Promise.all([fetch(`${BASE}/data/galaxies.bin`).then((r) => r.arrayBuffer()), fetch(`${BASE}/data/galaxies.json`).then((r) => r.json())]);
-      }).then(([b, meta]) => { s.setGalaxies(b, meta); setGalaxyCount(meta.count); }).catch(() => {});
+      }).then(([b, meta]) => { s.setGalaxies(b, meta); setGalaxyCount(meta.count); return loadSolar(BASE); }).then((data) => { s.setSolar(data); setSolar(data); }).catch(() => {});
     Promise.all([loadSpherexCatalog(BASE), loadQueue(BASE)]).then(([c, q]) => { setCatalog(c); setQueue(q.sources); }).catch((e) => setError(String(e.message ?? e)));
     return () => { live.current?.stop(); s.dispose(); sky.current = null; };
   }, []);
@@ -120,7 +127,7 @@ export default function App() {
     // A Solar System body is, at this scale, at the Sun.
     const parsecs = next.solar ? 2e-4 : MEASURED[next.id] ?? photometricDistance(next.dwarf?.type, next.dwarf?.W2)?.[1] ?? 20;
     const field = next.geometry ? next.geometry.width * next.geometry.gridPixelArcsec / 3600 / 0.38 : TELESCOPE_FOV;
-    sky.current?.aimAt(next.ra, next.dec, parsecs);
+    if (!(next.solar && sky.current?.aimBody(PREPARED_BODY[next.id] ?? ""))) sky.current?.aimAt(next.ra, next.dec, parsecs);
     sky.current?.flyTo(next.geometry?.centerRaDeg ?? next.ra, next.geometry?.centerDecDeg ?? next.dec, next.id === "barnard" || next.solar ? field : TELESCOPE_FOV);
   }, [catalog]);
 
@@ -132,6 +139,19 @@ export default function App() {
     sky.current?.flyTo(input.ra, input.dec, TELESCOPE_FOV);
     live.current = startLive(input, (t) => setLiveTarget(t));
   }, []);
+  // A small body clicked on the Solar System map: fly to where it was, and read the exposures of its visit.
+  const chooseBody = useCallback((body: SolarBody) => {
+    const prepared = Object.keys(PREPARED_BODY).find((k) => PREPARED_BODY[k] === body.id);
+    if (prepared && catalog?.targets.some((t) => t.id === prepared)) return choose(prepared);
+    if (!solar) return;
+    live.current?.stop(); live.current = null; autoKind.current = false;
+    setSelected(body.id); setPanel(true); setLiveTarget(null); setOpen("solar");
+    setView((v) => ({ ...v, kind: "date", frame: 0, playing: true, flagged: false }));
+    sky.current?.aimBody(body.id);
+    sky.current?.flyTo(body.ra, body.dec, 121 * 5 / 3600 / 0.38);
+    const id = body.id;
+    loadSolarFrames(BASE, solar, id).then((list) => { if (selectedRef.current === id) live.current = startMover(body, list, (t) => setLiveTarget(t)); }).catch((e) => setError(String(e.message ?? e)));
+  }, [catalog, solar, choose]);
   const chooseQueue = useCallback((q: QueueSource) => goLive({
     id: q.id, name: q.name, ra: q.ra, dec: q.dec, group: "queue", epoch: q.epoch, pm: q.pm, pmTotal: q.pmTotal, pmSigma: q.pmSigma, W1: q.W1, W2: q.W2,
     blurb: `Red in WISE (W1−W2 = ${(q.W1 - q.W2).toFixed(1)}) with a hint of motion: ${q.pmTotal.toFixed(2)}″ a year at ${q.pmSigma.toFixed(1)}σ. Nobody has looked at it in SPHEREx. Does it fade in the methane band?`,
@@ -157,6 +177,11 @@ export default function App() {
     if (!sky.current) return;
     sky.current.onHover = (what, x, y) => {
       if (!what) return setHovered(null);
+      if (what.kind === "body") {
+        const b = solar?.bodies[what.index]; if (!b) return;
+        return setHovered({ name: b.name, ra: b.ra, dec: b.dec, x, y, line: `${b.kind === "trojan" ? "Jupiter trojan" : b.kind === "near-Earth" ? "Near-Earth asteroid" : b.kind[0].toUpperCase() + b.kind.slice(1)}${b.rh ? ` · ${b.rh.toFixed(2)} au from the Sun` : ""}`,
+          note: `Seen by SPHEREx on ${dayOf(b.mjd)}: it crossed ${b.moved}″ in ${b.hours} hours. Shown where it was that day.` });
+      }
       if (what.kind === "galaxy") return setHovered({ name: what.name, ra: what.ra, dec: what.dec, x, y, line: `Galaxy · ${Math.round(what.distance * 3.26 / 1e6)} million light-years` });
       if (what.kind === "dwarf") {
         const target = catalog?.targets.find((t) => Math.hypot((t.ra - what.ra) * Math.cos(what.dec * Math.PI / 180), t.dec - what.dec) < 0.004);
@@ -167,12 +192,13 @@ export default function App() {
       if (target) setHovered({ name: target.name, ra: target.ra, dec: target.dec, x, y, target, line: "Candidate · no publication found" });
       else if (q) setHovered({ name: q.name, ra: q.ra, dec: q.dec, x, y, line: `Unchecked · red in WISE, motion ${q.pmTotal.toFixed(2)}″ a year at ${q.pmSigma.toFixed(1)}σ` });
     };
-  }, [catalog, queue]);
+  }, [catalog, queue, solar]);
   useEffect(() => { if (level !== "galaxy" || screen !== "sky") setHovered(null); }, [level, screen]);
   // A published SPHEREx dwarf clicked in the galaxy: fly to it and rebuild its image and spectrum from the archive.
   useEffect(() => {
     if (!sky.current) return;
     sky.current.onDwarf = (picked) => {
+      if (picked.kind === "body") { const b = solar?.bodies[picked.index]; if (b) chooseBody(b); return; }
       const known = catalog?.targets.find((t) => Math.hypot((t.ra - picked.ra) * Math.cos(picked.dec * Math.PI / 180), t.dec - picked.dec) < 0.004);
       if (known) return choose(known.id);
       sky.current!.destination = picked.position;
@@ -183,7 +209,7 @@ export default function App() {
         blurb: `SPHEREx type ${picked.type}, about ${Math.round(picked.distance * 3.26)} light-years away (${picked.measured ? "measured parallax" : "distance estimated from type and brightness"}). Its SPHEREx type is published: here its image and spectrum are rebuilt from the archive.`,
         published: `In the published SPHEREx table of ultracool dwarfs (Gagné et al. 2026), group “${picked.group}”` });
     };
-  }, [catalog, choose, goLive]);
+  }, [catalog, choose, goLive, solar, chooseBody]);
   // Home: the sky drifts, wide. Entering it flies to the first field.
   useEffect(() => { sky.current?.setHome(screen === "home"); }, [screen]);
   const enter = useCallback((then?: () => void) => { setScreen("sky"); setPresenting(null); then?.(); }, []);
@@ -224,10 +250,12 @@ export default function App() {
     s.setSelected(target?.id ?? "");
     if (!target || !frame || !target.geometry) { s.setFrame(null); return; }
     const g = target.geometry;
-    s.setFrame({ ra: g.centerRaDeg, dec: g.centerDecDeg, sizeArcsec: g.width * g.gridPixelArcsec, image: view.flagged && frame.flagged ? frame.flagged : frame.image,
+    s.setFrame({ ra: g.centerRaDeg, dec: g.centerDecDeg, sizeArcsec: g.width * g.gridPixelArcsec, mark: frame.at ? [(frame.at[0] + 0.5) / g.width, (frame.at[1] + 0.5) / g.height] : undefined, image: view.flagged && frame.flagged ? frame.flagged : frame.image,
       label: `${shortName(target.name)} · SPHEREx ${frame.kind === "date" ? frame.label : frame.label.split(" · ")[0]}${frame.images > 1 ? ` · ${frame.images} exposures` : ""}` });
   }, [target?.id, target?.geometry?.centerRaDeg, frame?.image, frame?.flagged, view.flagged, frame?.label, frame?.images]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { sky.current?.setFrameOpacity(view.opacity); }, [view.opacity]);
+  // With a Solar System body open, the planets on the map are shown at the day SPHEREx saw it; else today.
+  useEffect(() => { sky.current?.setSolarDate(target?.solar?.jd ?? null); }, [target?.solar?.jd, solar]);
   useEffect(() => {
     const s = sky.current;
     if (!s) return;
@@ -235,7 +263,7 @@ export default function App() {
     const d = target?.dwarf, type = d?.type ?? d?.knownType, hasDip = Boolean(d && d.dip !== "none" && d.snr >= 5);
     const head = (note: string) => `<b>3D view</b><em>${note}</em>`;
     if (target?.id === "barnard") { look = { kind: "star", temperature: 3200, methane: 0, brightness: 1, seed: 3 }; caption = head("Illustration · not an image") + "<span>Red dwarf star, about 3,200 K</span>"; }
-    else if (target?.solar) { look = { kind: "unknown", temperature: 200, methane: 0, brightness: 1, seed: hashSeed(target.id) }; caption = head("Placeholder · not an image") + `<span>${target.solar.kind === "comet" ? "A comet" : target.solar.kind === "centaur" ? "A centaur" : "An asteroid"}, ${target.solar.sunDistanceAu} au from the Sun</span>`; }
+    else if (target?.solar) { look = { kind: "unknown", temperature: 200, methane: 0, brightness: 1, seed: hashSeed(target.id) }; caption = head("Placeholder · not an image") + `<span>${target.solar.kind === "comet" ? "A comet" : target.solar.kind === "centaur" ? "A centaur" : target.solar.kind === "trojan" ? "A Jupiter trojan" : "An asteroid"}, ${Number(target.solar.sunDistanceAu).toFixed(1)} au from the Sun</span>`; }
     else if (target && type === "galaxy") { look = { kind: "galaxy", temperature: 0, methane: 0, brightness: 1, seed: hashSeed(target.id) }; caption = head("Illustration · not an image") + "<span>A galaxy: billions of stars, far outside the Milky Way</span>"; }
     else if (target && d && target.group !== "rejected" && (hasDip || type)) {
       // Drawn from what is known: the type sets the temperature and colour, the methane index the bands.
@@ -261,6 +289,8 @@ export default function App() {
     e.preventDefault();
     const byName = catalog?.targets.find((t) => t.name.toLowerCase().includes(query.trim().toLowerCase()) && query.trim().length > 3);
     if (byName) return choose(byName.id);
+    const q = query.trim().toLowerCase(), body = q.length > 2 ? solar?.bodies.find((b) => b.name.toLowerCase().replace(/[()]/g, "").split(" ").includes(q)) ?? solar?.bodies.find((b) => b.name.toLowerCase().includes(q)) : undefined;
+    if (body) return chooseBody(body);
     const p = parsePosition(query);
     if (p) lookAt(p[0], p[1]); else setError("Type a position such as “133.795 -7.245” or “08h55m10.8s -07°14′42″”.");
   };
@@ -307,7 +337,8 @@ export default function App() {
             const isOpen = open === g.id;
             return <div key={g.id} className="group">
               <button type="button" className="group-head" aria-expanded={isOpen} onClick={() => setOpen(isOpen ? null : g.id)}><span>{g.label}</span><span>{list.length} {isOpen ? "−" : "+"}</span></button>
-              {isOpen && <><p className="hint">{g.hint}</p><div className="pills">{list.map((t) => <button key={t.id} type="button" className={g.id === "unpublished" ? "amber" : ""} aria-pressed={selected === t.id} title={t.name} onClick={() => choose(t.id)}>{shortName(t.name)}</button>)}</div></>}
+              {isOpen && <><p className="hint">{g.hint}</p><div className="pills">{list.map((t) => <button key={t.id} type="button" className={g.id === "unpublished" ? "amber" : ""} aria-pressed={selected === t.id} title={t.name} onClick={() => choose(t.id)}>{shortName(t.name)}</button>)}</div>
+                {g.id === "solar" && solar && <button type="button" className="solar-open" onClick={() => { setPanel(false); sky.current?.show("solar"); }}>Open the Solar System map · {solar.count.toLocaleString("en-GB")} bodies seen by SPHEREx</button>}</>}
             </div>;
           })}
         </nav>}
@@ -321,10 +352,20 @@ export default function App() {
       <p className="where">{where}</p>
       {screen === "sky" && <nav className="levels glass" aria-label="Scale">
         <button type="button" onClick={() => setScreen("home")}>Home</button>
-        <button type="button" aria-pressed={level === "galaxy"} onClick={() => sky.current?.goLevel("galaxy")}>Galaxy view</button>
+        <button type="button" aria-pressed={level === "galaxy" && solarScale} onClick={() => { setPanel(false); sky.current?.show("solar"); }}>Solar System</button>
+        <button type="button" aria-pressed={level === "galaxy" && !solarScale} onClick={() => { if (level === "galaxy") sky.current?.show("sun"); else sky.current?.goLevel("galaxy"); }}>Galaxy view</button>
         <button type="button" aria-pressed={level === "sky"} onClick={() => sky.current?.goLevel("sky")}>Sky view</button>
       </nav>}
-      {screen === "sky" && level === "galaxy" && !(target && panel) && guide === null && <aside className="legend glass" aria-label="Legend">
+      {screen === "sky" && level === "galaxy" && solarScale && !(target && panel) && guide === null && <aside className="legend glass" aria-label="Legend">
+        <p className="legend-title">The Solar System, seen by SPHEREx</p>
+        <ul>
+          <li><i className="lg small" style={{ background: "#73c7e6" }} /><span><b>Small dots</b> · {(solar?.count ?? 7083).toLocaleString("en-GB")} asteroids and comets with a SPHEREx visit in our lists. Jupiter trojans are bluer, comets white, centaurs violet</span></li>
+          <li><i className="lg line" style={{ background: "#5ef2ff" }} /><span><b>Lines</b> · the orbits of the planets. Earth&apos;s is the bright one, 1 au from the Sun</span></li>
+          <li><i className="lg ring" style={{ borderColor: "#9df6ff" }} /><span><b>Sun, Earth and planets</b> · where they are today, or on the day of the visit once a body is open</span></li>
+        </ul>
+        <p className="legend-foot">Each small body is drawn where it was <b>on the day SPHEREx saw it</b>, not where it is now: the dots are not one snapshot. Click one: its exposures are read from NASA&apos;s archive and you watch it move against the stars. Scroll out to return to the stars.</p>
+      </aside>}
+      {screen === "sky" && level === "galaxy" && !solarScale && !(target && panel) && guide === null && <aside className="legend glass" aria-label="Legend">
         <p className="legend-title">What the dots are</p>
         <ul>
           <li><i className="lg small" style={{ background: "linear-gradient(90deg, #ffa866, #ff5c47, #eb5ca8, #9e73ff)" }} /><span><b>Small coloured dots</b> · dwarfs already typed by SPHEREx{published ? ` (${published.count.toLocaleString("en-GB")})` : ""}: M orange, L red, T magenta, Y violet</span></li>

@@ -8,6 +8,8 @@ export type SpxFrame = {
   id: string; kind: "date" | "colour"; label: string; image: string; flagged?: string;
   /** Number of exposures averaged in this frame (1 for a single exposure). */
   images: number; band?: [number, number]; date?: string; dateRange?: [string, string];
+  /** Where the moving body is in this frame: column and row on the grid. */
+  at?: [number, number];
 };
 export type SpxGroup = "start" | "solar" | "unpublished" | "blind" | "published" | "rejected" | "queue" | "position";
 export type SpxDeep = {
@@ -34,7 +36,7 @@ export type SpxTarget = {
   live?: { done: number; total: number; megabytes: number; finished: boolean; error?: string; pmSigma?: number };
   epoch?: number; pmMas?: [number, number];
   /** A Solar System body crossing a fixed field in single exposures. */
-  solar?: { kind: "comet" | "asteroid" | "centaur"; hours: number; movedArcsec: number; sunDistanceAu: number; earthDistanceAu: number };
+  solar?: { kind: "comet" | "asteroid" | "centaur" | "trojan" | "near-Earth"; hours: number; movedArcsec: number; sunDistanceAu: number; earthDistanceAu?: number; /** Julian day of the visit */ jd?: number; /** id of the body on the Solar System map */ body?: string };
   processing?: string[]; display?: string; source?: string;
 };
 export type SpxMethod = {
@@ -168,4 +170,21 @@ export function writeVote(target: SpxTarget, vote: Vote) {
   all[target.id] = { vote, at: new Date().toISOString(), name: target.name, ra: target.ra, dec: target.dec, R: target.dwarf?.R, snr: target.dwarf?.snr };
   try { localStorage.setItem(KEY, JSON.stringify(all)); } catch { /* storage blocked: the vote lives for this visit only */ }
   return all;
+}
+
+/** The Solar System layer: planets, and every small body with a SPHEREx visit in the lists at hand. */
+import type { Planet, SolarBody } from "./sky/galaxy";
+export type SolarFrame = [key: string, ra: number, dec: number, mjd: number, wave: number];
+export type SolarData = { count: number; chunk: number; credit: string; note: string; planets: Planet[]; bodies: SolarBody[] };
+export async function loadSolar(basePath: string): Promise<SolarData> {
+  const response = await fetch(basePath + "/data/solar.json");
+  if (!response.ok) throw new Error("Solar System data unavailable");
+  return response.json();
+}
+/** The exposures of one body's visit: fetched only when the body is opened. */
+export async function loadSolarFrames(basePath: string, data: SolarData, id: string): Promise<SolarFrame[]> {
+  const k = data.bodies.findIndex((b) => b.id === id);
+  const response = await fetch(`${basePath}/data/solar/frames-${Math.floor(k / data.chunk)}.json`);
+  if (k < 0 || !response.ok) throw new Error("No image list for this body");
+  return (await response.json())[id] ?? [];
 }

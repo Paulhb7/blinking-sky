@@ -1,6 +1,7 @@
 import { BANDS, GRID, binSpectrum, methaneIndex, pool, positionAt, readExposure, stackNoise, stackWindows, stats } from "./spherex/core.js";
 import { imagesAt } from "./spherex/index.js";
-import { dayLabel, type SpxFrame, type SpxGroup, type SpxTarget } from "./data";
+import { dayLabel, type SolarFrame, type SpxFrame, type SpxGroup, type SpxTarget } from "./data";
+import type { SolarBody } from "./sky/galaxy";
 
 /** Builds a field in this browser: finds the public SPHEREx exposures that cover a position, reads a small window of
  * each from NASA's bucket, and stacks them by season and by colour while they arrive. */
@@ -10,8 +11,8 @@ type Point = { wave: number; flux: number; error: number; badFraction: number; m
 const ERROR_SCALE = 1.6; // stacked errors are underestimated by about this factor (measured on empty positions in the earlier analysis)
 const date = (mjd: number) => new Date((mjd - 40587) * 86400000).toISOString().slice(0, 10);
 
-function render(image: Float32Array, lo: number, hi: number) {
-  const n = GRID.n, canvas = document.createElement("canvas"); canvas.width = canvas.height = n;
+function render(image: Float32Array, lo: number, hi: number, n = GRID.n) {
+  const canvas = document.createElement("canvas"); canvas.width = canvas.height = n;
   const ctx = canvas.getContext("2d")!, data = ctx.createImageData(n, n), k = Math.asinh(5);
   for (let i = 0; i < n * n; i++) {
     const v = Number.isFinite(image[i]) ? Math.max(0, Math.min(1, Math.asinh((image[i] - lo) / (hi - lo) * 5) / k)) : 0; // missing pixels stay black
@@ -125,4 +126,51 @@ export function quickLook(ra: number, dec: number, signal?: AbortSignal) {
   looks.set(key, run);
   run.then((result) => { if (!result) looks.delete(key); });   // an aborted or failed look can be tried again
   return run;
+}
+
+/** A Solar System body crossing a fixed field: the single exposures of one visit, read here and put on one north-up
+ * grid of 5″ pixels, 10′ across. The stars stay, the body moves. No stacking, nothing moved or amplified. */
+const FIELD = { n: 121, pixel: 5 };
+export function startMover(body: SolarBody, list: SolarFrame[], onUpdate: (target: SpxTarget) => void) {
+  const abort = new AbortController(), got: (Float32Array | null)[] = list.map(() => null), noise: number[] = [], bytes0 = stats().bytes;
+  let done = 0, finished = false, error = "";
+  const cos = Math.cos(body.dec * Math.PI / 180), half = (FIELD.n - 1) / 2;
+  const at = (f: SolarFrame): [number, number] => [half - (f[1] - body.ra) * cos * 3600 / FIELD.pixel, half - (f[2] - body.dec) * 3600 / FIELD.pixel];
+  const stamp = (mjd: number) => new Date((mjd - 40587) * 86400000).toISOString();
+  const build = (): SpxTarget => {
+    const ok = list.map((f, i) => ({ f, w: got[i], p: at(f) })).filter((x): x is { f: SolarFrame; w: Float32Array; p: [number, number] } => x.w !== null);
+    const frames: SpxFrame[] = [];
+    if (ok.length) {
+      // One stretch for every frame, set by the noise and by the body's own brightness (median over the frames, so one cosmic ray cannot set it).
+      const sigma = [...noise].sort((a, b) => a - b)[noise.length >> 1] || 1e-3;
+      const peaks = ok.map(({ w, p }) => { let m = 0; for (let r = Math.round(p[1]) - 2; r <= Math.round(p[1]) + 2; r++) for (let c = Math.round(p[0]) - 2; c <= Math.round(p[0]) + 2; c++) { const v = w[r * FIELD.n + c]; if (Number.isFinite(v)) m = Math.max(m, v); } return m; }).sort((a, b) => a - b);
+      const lo = -2 * sigma, hi = Math.min(Math.max(peaks[peaks.length >> 1] * 1.1, 14 * sigma), 90 * sigma);
+      ok.forEach(({ f, w, p }, i) => { const t = stamp(f[3]); frames.push({ id: `date${i}`, kind: "date", label: `${t.slice(0, 10)} · ${t.slice(11, 16)} UT`, date: t.slice(0, 10), images: 1, band: [f[4], f[4]], image: render(w, lo, hi, FIELD.n), at: p }); });
+    }
+    const what = body.kind === "comet" ? "A comet" : body.kind === "centaur" ? "A centaur, between Jupiter and Neptune" : body.kind === "trojan" ? "A Jupiter trojan, sharing Jupiter's orbit" : body.kind === "near-Earth" ? "A near-Earth asteroid" : "An asteroid";
+    return {
+      id: body.id, name: body.name, group: "solar", ra: body.ra, dec: body.dec, stacked: false, frames,
+      blurb: `${what}${body.rh ? `, ${body.rh.toFixed(2)} au from the Sun that day` : ""}. Each frame is one SPHEREx exposure of the same patch of sky: the stars stay, the body crosses ${body.moved}″ in ${body.hours} hours. The corner marks show where it was predicted to be.`,
+      geometry: frames.length ? { system: "ICRS TAN", centerRaDeg: body.ra, centerDecDeg: body.dec, width: FIELD.n, height: FIELD.n, gridPixelArcsec: FIELD.pixel, nativePixelArcsec: 6.15, referencePixelZeroBased: [half, half] } : undefined,
+      solar: { kind: body.kind, hours: body.hours, movedArcsec: body.moved, sunDistanceAu: body.rh ?? Math.hypot(...body.p), jd: body.mjd + 2400000.5, body: body.id },
+      live: { done, total: list.length, megabytes: (stats().bytes - bytes0) / 1e6, finished, error: error || undefined },
+      processing: ["Single exposures of one visit, 3.8–5 µm, read in this browser from NASA's bucket; the wavelength differs a little from one exposure to the next", "Local median background subtracted per exposure; no pixel flags applied, so a cosmic-ray hit can show in one frame",
+        "Bilinear resampling on one fixed north-up grid of 5″ pixels, 10′ across", "Same stretch for every frame; missing pixels are black; nothing is moved or amplified", "Predicted positions: IRSA Moving Object Search Tool"],
+      display: "8-bit grayscale, shared asinh stretch; not quantitative photometry",
+    };
+  };
+  (async () => {
+    try {
+      onUpdate(build());
+      await pool(list.map((f, i) => ({ f, i })), 6, ({ f }) => readExposure(f[0], body.ra, body.dec, { signal: abort.signal, half: 56, grid: FIELD }), (r, { i }) => {
+        done += 1;
+        if (abort.signal.aborted) return;
+        if (r?.window) { got[i] = r.window; noise.push(r.sigma); }
+        onUpdate(build());
+      });
+      if (!got.some(Boolean)) throw new Error("None of the exposures of this visit could be read");
+    } catch (reason) { if (!abort.signal.aborted) error = String((reason as Error).message ?? reason); }
+    finished = true; if (!abort.signal.aborted) onUpdate(build());
+  })();
+  return { stop: () => abort.abort(), more: async () => {} };
 }

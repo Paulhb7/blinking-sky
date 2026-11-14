@@ -58,7 +58,32 @@ const GAL_VERT = /* glsl */ `
 const GAL_FRAG = /* glsl */ `
   varying float vAlpha;
   void main() { float r = length(gl_PointCoord - 0.5) * 2.0; float a = pow(max(0.0, 1.0 - r), 1.8); gl_FragColor = vec4(vec3(0.86, 0.9, 1.0) * a * vAlpha, 1.0); }`;
-export type Picked = { kind: "dwarf" | "galaxy"; index: number; name: string; type: string; group: string; ra: number; dec: number; /** parsecs */ distance: number; measured: boolean; position: THREE.Vector3 };
+/** One astronomical unit, in kiloparsecs: the Solar System is nine orders of magnitude smaller than the galaxy map. */
+export const AU = 4.84813681e-9;
+const OBLIQUITY = 23.4392911 * DEG;
+export type SolarBody = { id: string; des: string; name: string; kind: "asteroid" | "trojan" | "comet" | "centaur" | "near-Earth"; v: number | null; rh: number | null; ra: number; dec: number; moved: number; hours: number; mjd: number; /** heliocentric, equatorial, au, at the date of its SPHEREx visit */ p: [number, number, number] };
+export type Planet = { id: string; name: string; epochJd: number; e: number; i: number; node: number; peri: number; meanAnomaly: number; meanMotion: number; a: number };
+/** Heliocentric place of a planet from its orbital elements (two-body motion), equatorial axes, au. `anomaly`: eccentric anomaly to trace the orbit instead. */
+function planetAt(el: Planet, jd: number, anomaly?: number): [number, number, number] {
+  let E = anomaly ?? 0;
+  if (anomaly === undefined) { const M = ((el.meanAnomaly + el.meanMotion * (jd - el.epochJd)) % 360) * DEG; E = M; for (let k = 0; k < 12; k++) E -= (E - el.e * Math.sin(E) - M) / (1 - el.e * Math.cos(E)); }
+  const x = el.a * (Math.cos(E) - el.e), y = el.a * Math.sqrt(1 - el.e * el.e) * Math.sin(E);
+  const w = el.peri * DEG, O = el.node * DEG, i = el.i * DEG, cw = Math.cos(w), sw = Math.sin(w), cO = Math.cos(O), sO = Math.sin(O), ci = Math.cos(i), si = Math.sin(i);
+  const X = (cw * cO - sw * sO * ci) * x + (-sw * cO - cw * sO * ci) * y, Y = (cw * sO + sw * cO * ci) * x + (-sw * sO + cw * cO * ci) * y, Z = sw * si * x + cw * si * y;
+  return [X, Y * Math.cos(OBLIQUITY) - Z * Math.sin(OBLIQUITY), Y * Math.sin(OBLIQUITY) + Z * Math.cos(OBLIQUITY)];
+}
+const BODY_VERT = /* glsl */ `
+  attribute float aKind; uniform float uScale, uAlpha; varying vec3 vTint;
+  void main() {
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    gl_PointSize = (aKind > 1.5 ? 5.5 : 3.6) * uScale;
+    vTint = (aKind < 0.5 ? vec3(0.45, 0.78, 0.9) : aKind < 1.5 ? vec3(0.42, 0.56, 1.0) : aKind < 2.5 ? vec3(0.9, 1.0, 1.0) : aKind < 3.5 ? vec3(0.72, 0.58, 1.0) : vec3(0.6, 1.0, 0.95)) * uAlpha;
+  }`;
+const BODY_FRAG = /* glsl */ `
+  varying vec3 vTint;
+  void main() { float r = length(gl_PointCoord - 0.5) * 2.0; float core = smoothstep(0.6, 0.0, r), halo = pow(max(0.0, 1.0 - r), 2.0) * 0.45; gl_FragColor = vec4(vTint * (core + halo), 1.0); }`;
+const KINDS = ["asteroid", "trojan", "comet", "centaur", "near-Earth"];
+export type Picked = { kind: "dwarf" | "galaxy" | "body"; id?: string; index: number; name: string; type: string; group: string; ra: number; dec: number; /** parsecs */ distance: number; measured: boolean; position: THREE.Vector3 };
 
 type Travel = { f0: THREE.Vector3; f1: THREE.Vector3; d0: number; d1: number; t: number; duration: number; done?: () => void; yaw?: number; pitch?: number };
 
@@ -72,12 +97,18 @@ export class Galaxy {
   private framed = false;
   private galUniforms = { uScale: { value: 1 }, uAlpha: { value: 0 } };
   private galaxies: { position: Float32Array; names: string[]; count: number } | null = null;
+  private solarUniforms = { uScale: { value: 1 }, uAlpha: { value: 0 } };
+  private solar: { position: Float32Array; bodies: SolarBody[]; planets: { el: Planet; at: THREE.Vector3; tag: HTMLDivElement }[]; orbits: THREE.LineBasicMaterial[]; sun: HTMLDivElement } | null = null;
+  private pendingSolar: { planets: Planet[]; bodies: SolarBody[] } | null = null;
+  /** True when the view is at the scale of the Solar System: planets and small bodies show, the stellar dots step back. */
+  solarOn = false;
   /** Camera distance at which the selected object's picture was put on screen. */
   arrival = 0.0035;
   private rot = new THREE.Matrix3();
   private objects: GalaxyObject[] = [];
   private dots: { o: GalaxyObject; position: THREE.Vector3; el: HTMLButtonElement }[] = [];
   private lines: THREE.LineSegments | null = null;
+  private rings: THREE.Line[] = [];
   private labels: { position: THREE.Vector3; el: HTMLDivElement; reach: number }[] = [];
   private here: HTMLDivElement;
   private travel: Travel | null = null;
@@ -113,7 +144,7 @@ export class Galaxy {
     for (const ly of [25, 50, 100, 250, 1000]) {
       const r = ly / LY * PC, pts: THREE.Vector3[] = [];
       for (let i = 0; i <= 128; i++) { const a = i / 128 * Math.PI * 2; pts.push(new THREE.Vector3(Math.cos(a) * r, 0, Math.sin(a) * r)); }
-      this.scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: 0x9fc4e6, transparent: true, opacity: 0.16, depthTest: false })));
+      const ring = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: 0x9fc4e6, transparent: true, opacity: 0.16, depthTest: false })); this.rings.push(ring); this.scene.add(ring);
       this.labels.push({ position: new THREE.Vector3(r, 0, 0), el: this.label("near-ring", `${ly.toLocaleString("en-GB")} light-years`), reach: r });
     }
     const seen = new Set<string>(), marks: number[] = []; let count = 0;
@@ -128,6 +159,7 @@ export class Galaxy {
     const landmarks = new THREE.Points(g, new THREE.PointsMaterial({ color: 0xffffff, size: 3, sizeAttenuation: false, transparent: true, opacity: 0.8, depthTest: false }));
     landmarks.frustumCulled = false; landmarks.renderOrder = 2; this.scene.add(landmarks);
     this.framed = true;
+    if (this.pendingSolar) { this.setSolar(this.pendingSolar); this.pendingSolar = null; }
     if (this.objects.length) this.setObjects(this.objects);
   }
 
@@ -156,9 +188,51 @@ export class Galaxy {
     points.frustumCulled = false; points.renderOrder = 1; this.scene.add(points);
     this.galaxies = { position, names: meta.names, count: n };
   }
+  /** Heliocentric equatorial au → the map's axes, kiloparsecs. */
+  fromAu(p: [number, number, number]) { return new THREE.Vector3(...p).applyMatrix3(this.rot).multiplyScalar(AU); }
+  /** The Solar System: the planets on their orbits, and every small body that has a SPHEREx visit, where it was that day. */
+  setSolar(data: { planets: Planet[]; bodies: SolarBody[] }) {
+    if (!this.framed) { this.pendingSolar = data; return; }
+    if (this.solar) return;
+    const n = data.bodies.length, position = new Float32Array(n * 3), kind = new Float32Array(n);
+    data.bodies.forEach((b, k) => { position.set(this.fromAu(b.p).toArray(), k * 3); kind[k] = Math.max(0, KINDS.indexOf(b.kind)); });
+    const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.BufferAttribute(position, 3)); g.setAttribute("aKind", new THREE.BufferAttribute(kind, 1));
+    const points = new THREE.Points(g, new THREE.ShaderMaterial({ vertexShader: BODY_VERT, fragmentShader: BODY_FRAG, uniforms: this.solarUniforms, blending: THREE.AdditiveBlending, depthWrite: false, depthTest: false, transparent: true }));
+    points.frustumCulled = false; points.renderOrder = 4; this.scene.add(points);
+    const orbits: THREE.LineBasicMaterial[] = [], planets = data.planets.map((el) => {
+      const pts: THREE.Vector3[] = []; for (let k = 0; k < 360; k++) pts.push(this.fromAu(planetAt(el, 0, k * DEG)));
+      const material = new THREE.LineBasicMaterial({ color: el.id === "earth" ? 0x9df6ff : 0x5ef2ff, transparent: true, opacity: 0, depthTest: false }); orbits.push(material);
+      const line = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(pts), material); line.frustumCulled = false; line.renderOrder = 3; this.scene.add(line);
+      const tag = this.label(`solar-planet ${el.id}`, ""); tag.innerHTML = "<i></i><span></span>"; (tag.lastChild as HTMLElement).textContent = el.name;
+      return { el, at: new THREE.Vector3(), tag };
+    });
+    const sun = this.label("solar-sun", ""); sun.innerHTML = "<i></i><span>Sun</span>";
+    this.solar = { position, bodies: data.bodies, planets, orbits, sun };
+    this.setSolarDate(null);
+  }
+  /** The planets at a date (Julian day), or today: when a body is open, the map shows the day SPHEREx saw it. */
+  setSolarDate(jd: number | null) { const day = jd ?? Date.now() / 86400000 + 2440587.5; for (const p of this.solar?.planets ?? []) p.at.copy(this.fromAu(planetAt(p.el, day))); }
+  /** A view from above the plane of the planets, a little tilted. */
+  eclipticView() { return this.fromAu([0, -Math.sin(OBLIQUITY), Math.cos(OBLIQUITY)]).normalize().multiplyScalar(0.8).add(this.fromAu([1, 0, 0]).normalize().multiplyScalar(0.6)).normalize(); }
+  bodyPosition(id: string) { const s = this.solar, k = s ? s.bodies.findIndex((b) => b.id === id) : -1; return s && k >= 0 ? new THREE.Vector3(s.position[k * 3], s.position[k * 3 + 1], s.position[k * 3 + 2]) : null; }
+  private bodyAt(x: number, y: number, width: number, height: number): Picked | null {
+    const s = this.solar; if (!s) return null;
+    const v = new THREE.Vector3(); let best = -1, bestD = 100;
+    for (let k = 0; k < s.bodies.length; k++) {
+      v.set(s.position[k * 3], s.position[k * 3 + 1], s.position[k * 3 + 2]).project(this.camera);
+      if (v.z > 1 || v.z < -1) continue;
+      const dx = (v.x + 1) / 2 * width - x, dy = (1 - v.y) / 2 * height - y, q = dx * dx + dy * dy;
+      if (q < bestD) { bestD = q; best = k; }
+    }
+    if (best < 0) return null;
+    const b = s.bodies[best];
+    return { kind: "body", id: b.id, index: best, name: b.name, type: b.kind, group: "Solar System", ra: b.ra, dec: b.dec, distance: 0, measured: true, position: new THREE.Vector3(s.position[best * 3], s.position[best * 3 + 1], s.position[best * 3 + 2]) };
+  }
+
   /** What is drawn nearest to a screen point, within a few pixels: a published dwarf near the Sun, a galaxy from outside. */
   pick(x: number, y: number, width: number, height: number): Picked | null {
     const outside = this.camera.position.length() > 150, g = this.galaxies;
+    if (this.solarOn) return this.bodyAt(x, y, width, height);
     if (!outside) { const d = this.dwarfAt(x, y, width, height); return d && { kind: "dwarf", ...d }; }
     if (!g) return null;
     const v = new THREE.Vector3(); let best = -1, bestD = 64;
@@ -218,7 +292,7 @@ export class Galaxy {
   positionOf(id: string) { return this.dots.find((d) => d.o.id === id)?.position ?? null; }
 
   rotate(dx: number, dy: number) { this.travel = null; this.yaw -= dx * 0.005; this.pitch = Math.max(-1.5, Math.min(1.5, this.pitch + dy * 0.005)); }
-  zoom(factor: number) { this.travel = null; this.distance = Math.max(4e-4, Math.min(9e5, this.distance * factor)); }
+  zoom(factor: number) { this.travel = null; this.distance = Math.max(this.focus.length() < 1e-5 ? 1.5 * AU : 4e-4, Math.min(9e5, this.distance * factor)); }
   /** Glide the focus and the zoom together; distances are interpolated in log so six orders of magnitude feel even. */
   go(focus: THREE.Vector3, distance: number, seconds: number, done?: () => void, from?: THREE.Vector3) {
     this.travel = { f0: this.focus.clone(), f1: focus.clone(), d0: this.distance, d1: distance, t: 0, duration: seconds, done };
@@ -241,7 +315,7 @@ export class Galaxy {
       if (tr.t >= 1) { this.travel = null; tr.done?.(); }
     } else if (!dragging && (this.home || (this.distance > 2 && this.distance < 150))) this.yaw += dt * (this.home ? 0.03 : 0.012);
     const p = new THREE.Vector3(Math.cos(this.pitch) * Math.cos(this.yaw), Math.sin(this.pitch), Math.cos(this.pitch) * Math.sin(this.yaw)).multiplyScalar(this.distance).add(this.focus);
-    this.camera.aspect = width / height; this.camera.near = Math.max(1e-6, this.distance * 0.02); this.camera.far = 5e6;   // the farthest galaxies are 700 megaparsecs away
+    this.camera.aspect = width / height; this.camera.near = this.distance * 0.02; this.camera.far = 5e6;   // the farthest galaxies are 700 megaparsecs away
     const shift = this.home && width > 900 ? -width * 0.2 : 0;
     if (shift) this.camera.setViewOffset(width, height, shift, 0, width, height); else this.camera.clearViewOffset();
     this.camera.position.copy(p); this.camera.lookAt(this.focus); this.camera.updateProjectionMatrix(); this.camera.updateMatrixWorld();
@@ -261,13 +335,23 @@ export class Galaxy {
     (this.here.lastChild as HTMLElement).textContent = fromSun > 150 ? "Milky Way · you are here" : "You are here";
     place(new THREE.Vector3(0, 0, 0), this.here, fromSun > 0.25);
     this.here.classList.toggle("quiet", fromSun < 2);
-    const local = fromSun < 0.45;
+    // At the scale of the planets the stellar dots would only be directions in the sky: they step back.
+    const solarOn = this.solarOn = fromSun < 6e-6 && Boolean(this.solar), near = this.distance / AU;
+    this.solarUniforms.uScale.value = pixelRatio; this.solarUniforms.uAlpha.value = 1 - THREE.MathUtils.smoothstep(fromSun, 1.2e-6, 6e-6);
+    if (this.solar) {
+      this.solar.orbits.forEach((m, k) => { m.opacity = this.solarUniforms.uAlpha.value * (this.solar!.planets[k].el.id === "earth" ? 0.85 : 0.38); });
+      place(new THREE.Vector3(0, 0, 0), this.solar.sun, solarOn && !this.staged);
+      for (const p of this.solar.planets) { place(p.at, p.tag, solarOn && !this.staged); p.tag.classList.toggle("named", p.el.id === "earth" || near < p.el.a * 14); }
+    }
+    for (const ring of this.rings) ring.visible = !solarOn;   // seen from the Sun they would be lines across the screen
+    if (this.lines) this.lines.visible = !solarOn;
+    const local = fromSun < 0.45 && !solarOn;
     for (const d of this.dots) {
       const own = d.o.id === this.selected;
       place(d.position, d.el, local && !(own && this.staged) && (d.o.basis !== "assumed" || fromSun < 0.16 || own));
       d.el.classList.toggle("on", own); d.el.classList.toggle("named", (fromSun < 0.08 && d.o.basis !== "assumed") || own);
     }
-    for (const l of this.labels) place(l.position, l.el, l.reach > 0 ? fromSun > l.reach * 0.7 && fromSun < l.reach * 9 : fromSun < 0.04);
+    for (const l of this.labels) place(l.position, l.el, l.reach > 0 ? fromSun > l.reach * 0.7 && fromSun < l.reach * 9 : fromSun < 0.04 && !solarOn);
   }
 }
 export { GALACTIC_CENTRE };

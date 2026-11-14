@@ -2,7 +2,7 @@ export const S3: string; export const NATIVE_PIXEL: number; export const GRID: {
 export const BANDS: Record<string, [number, number]>;
 export function stats(): { bytes: number; requests: number };
 export type Exposure = { key: string; mjd: number; detector: number; wave: number; bandwidth: number; x: number; y: number; skipped?: boolean; window?: Float32Array; flux: number; error: number; badFraction: number; sigma: number };
-export function readExposure(key: string, ra: number, dec: number, options?: { signal?: AbortSignal; want?: (wave: number) => boolean }): Promise<Exposure | null>;
+export function readExposure(key: string, ra: number, dec: number, options?: { signal?: AbortSignal; want?: (wave: number) => boolean; half?: number; grid?: { n: number; pixel: number } }): Promise<Exposure | null>;
 export function stackWindows(windows: Float32Array[]): Float32Array;
 export function stackNoise(image: Float32Array): number;
 type Band = { flux: number; error: number; n: number };

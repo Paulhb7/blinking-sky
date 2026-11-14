@@ -4,7 +4,6 @@
 export const S3 = "https://nasa-irsa-spherex.s3.us-east-1.amazonaws.com/";
 export const NATIVE_PIXEL = 6.15;            // arcsec
 export const GRID = { n: 61, pixel: 2.05 };  // output grid: one third of a native pixel, 125 arcsec across
-const HALF = 16;                             // native half-window, pixels
 const DEG = Math.PI / 180;
 const NX = 2040;
 const counters = { bytes: 0, requests: 0 };
@@ -100,10 +99,11 @@ export const FLUX_SCALE = { 1: 1.12, 2: 1.19, 3: 1.22, 4: 1.11, 5: 1.24, 6: 1.24
 
 /**
  * One exposure at one sky position: its window on the output grid, and a quick-look flux.
+ * `half` (native half-window, pixels) and `grid` widen the field for moving bodies.
  * `want(wave)` may decline the pixels once the wavelength is known (two small requests instead of three).
  * Returns null when the position is off the detector.
  */
-export async function readExposure(key, ra, dec, { signal, want } = {}) {
+export async function readExposure(key, ra, dec, { signal, want, half: HALF = 16, grid = GRID } = {}) {
   const url = S3 + key;
   const head = await range(url, 0, 28799, signal);
   const bytes = new Uint8Array(head.buffer);
@@ -143,11 +143,11 @@ export async function readExposure(key, ra, dec, { signal, want } = {}) {
   const scale = omega / (FLUX_SCALE[info.detector] ?? 1);
   const flux = spp ? spd / spp * scale : NaN, error = spp ? sigma / Math.sqrt(spp) * scale : NaN;
   // Resample on the north-up grid centred on the position.
-  const n = GRID.n, out = new Float32Array(n * n), half = (n - 1) / 2;
+  const n = grid.n, out = new Float32Array(n * n), half = (n - 1) / 2;
   for (let r = 0; r < n; r++) {
-    const d = dec - (r - half) * GRID.pixel / 3600, cosd = Math.cos(d * DEG);
+    const d = dec - (r - half) * grid.pixel / 3600, cosd = Math.cos(d * DEG);
     for (let c = 0; c < n; c++) {
-      const p = wcs.toPixel(ra - (c - half) * GRID.pixel / 3600 / cosd, d);
+      const p = wcs.toPixel(ra - (c - half) * grid.pixel / 3600 / cosd, d);
       let v = NaN;
       if (p) {
         const fx0 = p[0] - x0, fy0 = p[1] - y0, ix = Math.floor(fx0), iy = Math.floor(fy0), fx = fx0 - ix, fy = fy0 - iy;

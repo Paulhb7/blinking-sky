@@ -221,3 +221,20 @@ body { background: #02060b; }
 /* During a live slide the tool is the picture: its panels stay, pushed down a little to leave room for the slide's title. */
 .app[data-presenting="live"] .left, .app[data-presenting="live"] .spx-panel { top: 6.6rem !important; bottom: 4.6rem !important; }
 .app[data-presenting="live"] .guide { bottom: 5.4rem; }
+
+/* Solar System scale of the map */
+.solar-sun, .solar-planet { position: absolute; left: 0; top: 0; z-index: 31; display: flex; align-items: center; gap: 7px; pointer-events: none; font: 10px var(--font-geist-mono); letter-spacing: 0.14em; text-transform: uppercase; color: #b5e9ee; text-shadow: 0 1px 6px #000; }
+.solar-sun { margin: -8px 0 0 -8px; color: #fff3d6; }
+.solar-sun i { width: 16px; height: 16px; border-radius: 50%; background: radial-gradient(circle, #fff 0 30%, #ffe9a8 55%, rgb(255 190 90 / 0) 100%); box-shadow: 0 0 22px 6px rgb(255 214 130 / 0.75), 0 0 60px 18px rgb(255 180 84 / 0.25); }
+.solar-planet { margin: -4px 0 0 -4px; }
+.solar-planet i { width: 8px; height: 8px; border-radius: 50%; background: #9df6ff; box-shadow: 0 0 10px rgb(94 242 255 / 0.9); }
+.solar-planet span { display: none; } .solar-planet.named span { display: inline; }
+.solar-planet.earth { color: #fff; margin: -5px 0 0 -5px; } .solar-planet.earth i { width: 10px; height: 10px; background: #5aa8ff; box-shadow: 0 0 0 3px rgb(94 242 255 / 0.25), 0 0 14px #5aa8ff; }
+.app[data-presenting="full"] .solar-sun, .app[data-presenting="full"] .solar-planet, .app[data-screen="home"] .solar-sun, .app[data-screen="home"] .solar-planet { visibility: hidden; }
+.solar-open { margin-top: 8px; width: 100%; padding: 8px 10px; border: 1px solid rgb(94 242 255 / 0.45); border-radius: 8px; background: rgb(94 242 255 / 0.08); color: #9df6ff; font: 11px var(--font-geist-mono); text-align: left; cursor: pointer; }
+.solar-open:hover { background: rgb(94 242 255 / 0.16); }
+/* Where to look in a frame: four corner ticks around the predicted place, never on it. */
+.sky-stage-mark { position: absolute; width: 0; height: 0; pointer-events: none; }
+.sky-stage-mark::before, .sky-stage-mark::after { content: ""; position: absolute; left: -15px; top: -15px; width: 30px; height: 30px; box-sizing: border-box; }
+.sky-stage-mark::before { border-left: 1px solid rgb(94 242 255 / 0.85); border-right: 1px solid rgb(94 242 255 / 0.85); clip-path: polygon(0 0, 100% 0, 100% 22%, 0 22%, 0 78%, 100% 78%, 100% 100%, 0 100%); }
+.sky-stage-mark::after { border-top: 1px solid rgb(94 242 255 / 0.85); border-bottom: 1px solid rgb(94 242 255 / 0.85); clip-path: polygon(0 0, 22% 0, 22% 100%, 0 100%, 0 0, 78% 0, 100% 0, 100% 100%, 78% 100%); }

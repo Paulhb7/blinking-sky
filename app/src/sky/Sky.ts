@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { Galaxy, GALACTIC_CENTRE, type GalaxyObject, type Picked } from "./galaxy";
+import { AU, Galaxy, GALACTIC_CENTRE, type GalaxyObject, type Picked } from "./galaxy";
 import { Portrait, type PortraitLook } from "./portrait";
 
 /** The night sky of Blinking Sky: the real bright stars, an equatorial grid, markers, and archived frames placed where
@@ -14,7 +14,7 @@ export const direction = (ra: number, dec: number) => new THREE.Vector3(Math.cos
 const toRaDec = (v: THREE.Vector3): [number, number] => [((Math.atan2(v.y, v.x) / DEG) % 360 + 360) % 360, Math.asin(Math.max(-1, Math.min(1, v.z / v.length()))) / DEG];
 
 export type Marker = { id: string; name: string; ra: number; dec: number; tone: "cand" | "known" | "off" | "queue" };
-export type FrameSpec = { ra: number; dec: number; sizeArcsec: number; image: string | HTMLCanvasElement | null; label: string };
+export type FrameSpec = { ra: number; dec: number; sizeArcsec: number; image: string | HTMLCanvasElement | null; label: string; /** where to look in the picture, as fractions of its side from the top left */ mark?: [number, number] };
 type Insets = { left: number; right: number };
 
 const STAR_VERT = /* glsl */ `
@@ -94,6 +94,7 @@ export class Sky {
   private bound = false;
   private stage!: HTMLDivElement;
   private stagePortrait!: HTMLDivElement;
+  private stageMark!: HTMLDivElement;
   private staged = false;
   /** Pointer over something in the galaxy: a published dwarf, one of the listed objects, or nothing. */
   onHover: (what: Picked | { kind: "object"; id: string } | null, x: number, y: number) => void = () => {};
@@ -135,6 +136,7 @@ export class Sky {
     this.stage = document.createElement("div"); this.stage.className = "sky-stage"; this.stage.style.display = "none";
     this.stage.innerHTML = `<div class="sky-stage-label"></div><img alt="" /><div class="sky-stage-wait">Reading exposures from NASA&rsquo;s archive…</div><div class="sky-stage-foot">Telescope image · north up, east left · 125″ across</div>`;
     this.stagePortrait = document.createElement("div"); this.stagePortrait.className = "sky-portrait-label"; this.stagePortrait.style.display = "none";
+    this.stageMark = document.createElement("div"); this.stageMark.className = "sky-stage-mark"; this.stage.insertBefore(this.stageMark, this.stage.lastChild);
     host.append(this.stage, this.stagePortrait);
     this.overlay.style.display = "none";
     this.frameLabel = this.tag("sky-frame-label"); this.portraitLabel = this.tag("sky-portrait-label"); this.pixelBox = this.tag("sky-pixel");
@@ -206,7 +208,7 @@ export class Sky {
       // Travel through the galaxy to the object and stop on the Sun's side of it: its picture and 3D view appear there.
       const dir = this.galaxy.direction(ra, dec), at = this.galaxy.positionOf(this.selected) ?? this.destination ?? dir.clone().multiplyScalar(0.002);
       // Stop close to a star, well back from a galaxy: a few parsecs, or a few hundred thousand light-years.
-      const stop = Math.max(0.0035, at.length() * 0.0025); this.galaxy.arrival = stop;
+      const stop = at.length() < 1e-5 ? Math.max(0.35 * AU, at.length() * 0.22) : Math.max(0.0035, at.length() * 0.0025); this.galaxy.arrival = stop;
       this.destination = null; this.galaxy.home = false; this.bound = true; this.staged = false;
       this.look = { ra, dec, fov };   // so that switching to the sky view lands on the same object
       this.galaxy.go(at, stop, 3.4, () => { this.bound = false; this.staged = true; }, dir.clone().negate());
@@ -255,15 +257,23 @@ export class Sky {
     }
   }
   /** Named views of the galaxy map, for the talk: turning slowly from outside, among the galaxies, the whole Milky Way, around the Sun. */
-  show(name: "orbit" | "galaxies" | "milkyway" | "sun", seconds = 2.6) {
+  show(name: "orbit" | "galaxies" | "milkyway" | "sun" | "solar", seconds = 2.6) {
     if (this.mode !== "galaxy") this.setMode("galaxy");
     this.flight = null; this.staged = false; this.bound = false; this.galaxy.home = name === "orbit";
     if (name === "orbit") this.galaxy.go(GALACTIC_CENTRE.clone().multiplyScalar(0.8), 34, seconds);
     else if (name === "galaxies") this.galaxy.go(new THREE.Vector3(), 130000, seconds);
     else if (name === "milkyway") this.galaxy.go(GALACTIC_CENTRE.clone().multiplyScalar(0.8), 38, seconds);
+    else if (name === "solar") this.galaxy.go(new THREE.Vector3(), 15 * AU, seconds + 0.8, undefined, this.galaxy.eclipticView());
     else this.galaxy.go(new THREE.Vector3(), 0.1, seconds);
   }
   galaxyNamed(name: string) { return this.galaxy.galaxyNamed(name); }
+  setSolar(data: Parameters<Galaxy["setSolar"]>[0]) { this.galaxy.setSolar(data); }
+  setSolarDate(jd: number | null) { this.galaxy.setSolarDate(jd); }
+  /** The next flight ends at this Solar System body, where it was when SPHEREx saw it. */
+  aimBody(id: string) { const p = this.galaxy.bodyPosition(id); if (p) this.destination = p; return Boolean(p); }
+  /** Told when the galaxy map enters or leaves the scale of the Solar System. */
+  onScale: (solar: boolean) => void = () => {};
+  private wasSolar = false;
   /** Where the next flight in the galaxy should end, for an object that is not among the listed dots. */
   aimAt(ra: number, dec: number, parsecs: number) { this.destination = this.galaxy.direction(ra, dec).multiplyScalar(parsecs * 1e-3); }
 
@@ -338,6 +348,7 @@ export class Sky {
     if (this.mode === "galaxy") {
       const g = this.galaxy; g.selected = this.selected; g.staged = this.staged;
       g.update(dt, w, h, Boolean(this.drag), this.renderer.getPixelRatio());
+      if (g.solarOn !== this.wasSolar) { this.wasSolar = g.solarOn; this.onScale(g.solarOn); }
       this.renderer.setViewport(0, 0, w, h); this.renderer.setScissorTest(false); this.renderer.clear();
       this.renderer.render(g.scene, g.camera);
       // The object's picture on the left of the free area, its 3D view on the right.
@@ -356,6 +367,8 @@ export class Sky {
         (this.stage.firstChild as HTMLElement).textContent = spec?.label ?? "";
         if (spec) (this.stage.lastChild as HTMLElement).textContent = `Telescope image · north up, east left · ${spec.sizeArcsec >= 180 ? (spec.sizeArcsec / 60).toFixed(1) + "′" : Math.round(spec.sizeArcsec) + "″"} across`;
         this.stage.style.transform = `translate(${x0}px, ${y0}px)`; this.stage.style.width = `${size}px`;
+        this.stageMark.style.display = image && spec?.mark ? "block" : "none";
+        if (spec?.mark) { this.stageMark.style.left = `${spec.mark[0] * size}px`; this.stageMark.style.top = `${spec.mark[1] * size}px`; }
         if (twin) {
           const px = x0 + size + gap;
           this.stagePortrait.innerHTML = this.portraitLabel.innerHTML; this.stagePortrait.style.left = `${px}px`; this.stagePortrait.style.top = `${y0 - 46}px`; this.stagePortrait.style.width = `${size}px`;
@@ -366,6 +379,7 @@ export class Sky {
       return;
     }
     this.stage.style.display = "none"; this.stagePortrait.style.display = "none";
+    if (this.wasSolar) { this.wasSolar = false; this.onScale(false); }
     // At telescope zoom the frame moves left of the free area and the portrait takes the right.
     const tele = THREE.MathUtils.smoothstep(Math.log(0.6 / this.look.fov), 0, Math.log(0.6 / 0.2));
     const hasPortrait = this.portrait.active && this.frameSpec !== null;

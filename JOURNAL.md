@@ -36,3 +36,4 @@ Décision de Paul : sortir l'outil d'Atlas. Tout est dans `app/` (Vite, React, t
 - Recherche à une position quelconque (l'outil montre des champs préparés).
 - Vue 3D de l'objet pilotée par les données (prévue dans la maquette).
 - Recherche ADS automatique ; calque DECam sur le ciel (les images profondes sont dans le panneau).
+- 14 nov. (pendant les 48 h) : vue Système solaire. `build_solar.py` liste 7 083 astéroïdes et comètes ayant un passage SPHEREx (listes d'images issues du travail antérieur H1, déclaré comme tel) ; la carte place le Soleil, la Terre, les planètes et ces corps ; au clic, les 6 poses du passage sont lues en direct depuis l'archive (`startMover`).
