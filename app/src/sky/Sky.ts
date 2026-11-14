@@ -237,6 +237,8 @@ export class Sky {
   /** Called when a published SPHEREx dwarf is clicked in the galaxy. */
   onDwarf: (picked: Picked) => void = () => {};
   setObjects(objects: GalaxyObject[]) { this.galaxy.setObjects(objects); }
+  /** Which layers of dots the guided introduction lets through (4: all). Also brings the view back around the Sun. */
+  setReveal(step: number, recentre = false) { this.galaxy.reveal = step; if (recentre && this.mode === "galaxy" && !this.galaxy.home) { this.staged = false; this.galaxy.go(new THREE.Vector3(), step >= 2 ? 0.075 : 0.11, 1.6); } }
   /** The two views of the same thing: the galaxy map, or the night sky. Each keeps the selected object in front. */
   goLevel(level: "galaxy" | "sky") {
     if (level === this.mode) return;

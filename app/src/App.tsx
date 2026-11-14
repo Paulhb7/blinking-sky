@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Search, Shuffle } from "lucide-react";
+import Guide from "./Guide";
 import HoverCard, { type Hovered } from "./HoverCard";
 import Landing from "./Landing";
 import CountUp from "./reactbits/CountUp";
@@ -50,6 +51,10 @@ export default function App() {
   const [presenting, setPresenting] = useState(params.has("present"));
   const [level, setLevel] = useState<"galaxy" | "sky">("galaxy");
   const [hovered, setHovered] = useState<Hovered | null>(null);
+  // The guided introduction: shown the first time the map opens, and again from "How it works".
+  const [guide, setGuide] = useState<number | null>(() => { try { return localStorage.getItem("blinking-sky.guide.v1") ? null : 0; } catch { return 0; } });
+  const [suspectsShown, setSuspectsShown] = useState(false);
+  const closeGuide = useCallback(() => { setGuide(null); try { localStorage.setItem("blinking-sky.guide.v1", "seen"); } catch { /* storage blocked */ } }, []);
   const [galaxyCount, setGalaxyCount] = useState(0);
   const [published, setPublished] = useState<{ count: number; measured: number; estimated: number } | null>(null);
   const live = useRef<ReturnType<typeof startLive> | null>(null);
@@ -90,9 +95,16 @@ export default function App() {
       const estimate = t.group === "unpublished" ? photometricDistance(t.dwarf?.type, t.dwarf?.W2) : null;
       if (estimate) objects.push({ id: t.id, name: shortName(t.name), ra: t.ra, dec: t.dec, tone: "cand", distance: estimate, basis: "estimated" });
     }
-    for (const q of queue) { const d = photometricDistance("T7", q.W2); if (d) objects.push({ id: q.id, name: shortName(q.name), ra: q.ra, dec: q.dec, tone: "queue", distance: d, basis: "assumed" }); }
+    for (const q of queue) {
+      // A look changes the dot: solid when it fades in methane and the measurement agrees, dimmed when it does not fade.
+      const d = photometricDistance("T7", q.W2), v = votes[q.id];
+      const state = !v ? undefined : v.vote !== "fades" ? "dismissed" as const : v.R !== undefined && v.R !== null && v.R < 0.3 && (v.snr ?? 0) >= 5 ? "found" as const : "flagged" as const;
+      if (d) objects.push({ id: q.id, name: shortName(q.name), ra: q.ra, dec: q.dec, tone: "queue", distance: d, basis: "assumed", state });
+    }
     sky.current.setObjects(objects);
-  }, [catalog, queue, published, liveTarget?.id, liveTarget?.group, liveTarget?.ra, liveTarget?.dec]);
+  }, [catalog, queue, published, votes, liveTarget?.id, liveTarget?.group, liveTarget?.ra, liveTarget?.dec]);
+  // During the guide the map shows one layer more at each step; the suspects only appear once their selection has been replayed.
+  useEffect(() => { sky.current?.setReveal(guide === null ? 4 : guide === 1 ? (suspectsShown ? 2 : 1) : guide + 1, guide !== null && screen === "sky" && !(guide === 1 && suspectsShown)); }, [guide, screen, suspectsShown]);
 
   const choose = useCallback((id: string) => {
     const next = catalog?.targets.find((t) => t.id === id);
@@ -248,7 +260,8 @@ export default function App() {
     if (p) lookAt(p[0], p[1]); else setError("Type a position such as “133.795 -7.245” or “08h55m10.8s -07°14′42″”.");
   };
   const checked = queue.filter((q) => votes[q.id]).length;
-  const found = Object.entries(votes).filter(([, v]) => v.vote === "fades").length;
+  const found = queue.filter((q) => { const v = votes[q.id]; return v?.vote === "fades" && v.R !== undefined && v.R !== null && v.R < 0.3 && (v.snr ?? 0) >= 5; }).length;
+  const candidateCount = (catalog?.targets.filter((t) => t.group === "unpublished").length ?? 12);
 
   return (
     <div className="app" data-screen={screen} data-level={level} data-presenting={presenting || undefined}>
@@ -256,11 +269,11 @@ export default function App() {
       <aside className="left glass" ref={leftRef} aria-label="Blinking Sky">
         <header>
           <p className="eyebrow">NASA SPHEREx · real images</p>
-          <h1>Blinking <GradientText colors={["#a5f3fc", "#e0f7ff", "#7dd3fc", "#a5f3fc"]} animationSpeed={8} className="brand-accent">Sky</GradientText></h1>
+          <h1>Blinking <GradientText colors={["#5ef2ff", "#d6fbff", "#00b8d9", "#5ef2ff"]} animationSpeed={8} className="brand-accent">Sky</GradientText></h1>
           <p className="lead">The infrared sky, seen again every six months in 102 colours. Blink two dates to see what moves. Blink two colours to see what it is made of.</p>
         </header>
         <button type="button" className="primary" onClick={nextUnchecked} disabled={!queue.length}><Shuffle size={14} /> Show me one nobody has checked</button>
-        <p className="count">{queue.length ? <><CountUp key={queue.length - checked} to={queue.length - checked} from={Math.max(0, queue.length - checked - 40)} duration={0.9} /> unchecked sources · you have looked at {checked}{found ? <> · <b>{found} marked as fading</b></> : null}</> : "Loading the review queue…"}</p>
+        <p className="count">{queue.length ? <><CountUp key={queue.length - checked} to={queue.length - checked} from={Math.max(0, queue.length - checked - 40)} duration={0.9} /> unchecked sources · you have looked at {checked}{found ? <> · <b>{found} new candidate{found > 1 ? "s" : ""} found by you</b></> : null}</> : "Loading the review queue…"}</p>
         <form className="search" onSubmit={submit}>
           <Search size={13} /><input value={query} onChange={(e) => { setQuery(e.target.value); setError(""); }} placeholder="RA Dec, or a name · 133.795 -7.245" aria-label="Sky position or name" /><button type="submit">Go</button>
         </form>
@@ -280,7 +293,7 @@ export default function App() {
           <button type="button" onClick={() => { if (target) { setPanel(true); sky.current?.flyTo(target.geometry?.centerRaDeg ?? target.ra, target.geometry?.centerDecDeg ?? target.dec, target.id === "barnard" ? 0.45 : TELESCOPE_FOV, 1.4); } }}>Telescope view</button>
           <button type="button" onClick={() => sky.current?.wide()}>Wide sky</button>
         </div>
-        <div className="left-links"><button type="button" onClick={() => setScreen("home")}>← Home</button><button type="button" onClick={() => setPresenting(true)}>Presentation · P</button></div>
+        <div className="left-links"><button type="button" onClick={() => setScreen("home")}>← Home</button><button type="button" onClick={() => { setGuide(0); sky.current?.goLevel("galaxy"); }}>How it works</button><button type="button" onClick={() => setPresenting(true)}>Presentation · P</button></div>
         <p className="fine">In the galaxy: drag to turn, scroll to zoom, click a dot to fly to it. At the telescope: real SPHEREx exposures, read from NASA&apos;s archive. The galaxy&apos;s shape is a model; distances marked estimated or assumed are not measurements. Data: NASA/JPL-Caltech/SPHEREx · NASA/IPAC IRSA · Gagné et al. 2026 · Gaia DR3 · CatWISE2020. Nothing you do here is sent anywhere.</p>
       </aside>
       <p className="where">{where}</p>
@@ -289,24 +302,29 @@ export default function App() {
         <button type="button" aria-pressed={level === "galaxy"} onClick={() => sky.current?.goLevel("galaxy")}>Galaxy view</button>
         <button type="button" aria-pressed={level === "sky"} onClick={() => sky.current?.goLevel("sky")}>Sky view</button>
       </nav>}
-      {screen === "sky" && level === "galaxy" && !(target && panel) && <aside className="legend glass" aria-label="Legend">
+      {screen === "sky" && level === "galaxy" && !(target && panel) && guide === null && <aside className="legend glass" aria-label="Legend">
         <p className="legend-title">What the dots are</p>
         <ul>
           <li><i className="lg small" style={{ background: "linear-gradient(90deg, #ffa866, #ff5c47, #eb5ca8, #9e73ff)" }} /><span><b>Small coloured dots</b> · dwarfs already typed by SPHEREx{published ? ` (${published.count.toLocaleString("en-GB")})` : ""}: M orange, L red, T magenta, Y violet</span></li>
-          <li><i className="lg ring amber" /><span><b>Yellow, filled</b> · our 12 candidates with no publication found</span></li>
+          <li><i className="lg ring amber" /><span><b>Yellow, filled</b> · {candidateCount} candidates with no publication found{found ? `, plus ${found} found by you` : ""}</span></li>
           <li><i className="lg hollow" /><span><b>Yellow, hollow</b> · {queue.length || 382} sources nobody has checked</span></li>
           <li><i className="lg gal" /><span><b>White dots, far out</b> · {galaxyCount ? galaxyCount.toLocaleString("en-GB") : "43,463"} galaxies at a measured distance. Zoom out past the Milky Way</span></li>
           <li><i className="lg line" /><span><b>Line</b> · its distance is estimated: the candidate is somewhere along it</span></li>
         </ul>
         <p className="legend-foot">The galaxy&apos;s shape is a model. Hollow dots sit where they would be <b>if</b> they are cold dwarfs. Rest the pointer on a dot for a first look; click to fly there.</p>
       </aside>}
+      {guide !== null && screen === "sky" && level === "galaxy" && !presenting && !(target && panel) && <Guide step={guide} published={published?.count ?? 15739} suspects={queue.length || 382} candidates={candidateCount}
+        onStep={(next) => { if (next === 1) setSuspectsShown(false); setGuide(next); }} onSuspects={setSuspectsShown} onClose={closeGuide} onHunt={() => { closeGuide(); nextUnchecked(); }} />}
       {hovered && screen === "sky" && level === "galaxy" && !presenting && <HoverCard key={`${hovered.ra},${hovered.dec}`} hovered={hovered} />}
       {screen === "home" && <Landing queueSize={queue.length} images="1.6 million" onEnter={() => enter()} onUnchecked={() => enter(nextUnchecked)} onPresent={() => setPresenting(true)} />}
       {presenting && <Slides catalog={catalog} queueSize={queue.length} onClose={() => setPresenting(false)} onLaunch={() => enter()} />}
       {target && catalog && panel && <Panel target={target} catalog={catalog} view={view} ready={target.frames.length > 0} error="" vote={votes[target.id]?.vote}
         onView={(next) => { if (next.kind) autoKind.current = false; setView((v) => ({ ...v, ...next })); }} onClose={() => setPanel(false)}
         onRecenter={() => sky.current?.flyTo(target.geometry?.centerRaDeg ?? target.ra, target.geometry?.centerDecDeg ?? target.dec, target.id === "barnard" ? 0.45 : TELESCOPE_FOV, 1.2)} onRetry={() => {}}
-        onVote={(vote: Vote) => setVotes(writeVote(target, vote))} onMore={live.current ? () => live.current?.more() : undefined} onNext={target.group === "queue" ? nextUnchecked : undefined} />}
+        onVote={(vote: Vote) => setVotes(writeVote(target, vote))} onMore={live.current ? () => live.current?.more() : undefined} onNext={target.group === "queue" ? nextUnchecked : undefined}
+        onReplay={target.group === "unpublished" && !target.live ? () => { sky.current?.aimAt(target.ra, target.dec, photometricDistance(target.dwarf?.type, target.dwarf?.W2)?.[1] ?? 20); goLive({ id: `${target.id}-replay`, name: target.name, ra: target.ra, dec: target.dec, group: "position", W1: target.dwarf?.W1 ?? undefined, W2: target.dwarf?.W2 ?? undefined,
+          blurb: "Replay: this is how this candidate was found. It started as a red, moving source in WISE, like the unchecked ones. The exposures are read again from the archive: blink the two colours and see whether you would have caught it.",
+          published: target.dwarf?.published ?? "" }); } : undefined} />}
     </div>
   );
 }

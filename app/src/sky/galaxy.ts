@@ -14,6 +14,8 @@ export type GalaxyObject = {
   distance: [number, number, number];
   /** measured: parallax; estimated: from fitted type and brightness; assumed: what it would be if it is a cold dwarf */
   basis: "measured" | "estimated" | "assumed";
+  /** What a look at it concluded, when someone has looked: found fading in methane, flagged by eye only, or set aside. */
+  state?: "found" | "flagged" | "dismissed";
 };
 
 /** Absolute W2 magnitude by spectral type. T4–T9 are replaced at load by the medians measured on the published SPHEREx
@@ -83,6 +85,8 @@ export class Galaxy {
   /** Landing page: the galaxy sits right of the text and the view orbits slowly. */
   home = true;
   selected = "";
+  /** Guided introduction: 1 shows only what is published, 2 adds the unchecked sources, 3 and more everything. */
+  set reveal(step: number) { this.overlay.dataset.reveal = String(step); }
   /** True while the selected object's picture is on screen: its own dot would sit in the middle of it. */
   staged = false;
   onPick: (id: string) => void = () => {};
@@ -187,16 +191,17 @@ export class Galaxy {
     if (!this.framed) return;
     this.dots.forEach((d) => d.el.remove()); this.dots = [];
     if (this.lines) { this.scene.remove(this.lines); this.lines.geometry.dispose(); }
-    const seg: number[] = [], col: number[] = [], amber = new THREE.Color("#f6cf8d"), cyan = new THREE.Color("#a5f3fc"), grey = new THREE.Color("#8a94a0");
+    const seg: number[] = [], col: number[] = [], amber = new THREE.Color("#ffb454"), cyan = new THREE.Color("#5ef2ff"), grey = new THREE.Color("#8a94a0");
     for (const o of objects) {
       const dir = this.direction(o.ra, o.dec), c = o.tone === "cand" || o.tone === "queue" ? amber : o.tone === "off" ? grey : cyan, k = o.basis === "assumed" ? 0.35 : 1;
       // The distance is a span along the line of sight, not a point.
       if (o.distance[0] !== o.distance[2] && o.basis !== "assumed") { seg.push(...dir.clone().multiplyScalar(o.distance[0] * PC).toArray(), ...dir.clone().multiplyScalar(o.distance[2] * PC).toArray()); col.push(c.r * k, c.g * k, c.b * k, c.r * k, c.g * k, c.b * k); }
-      const el = document.createElement("button"); el.type = "button"; el.className = `near-object ${o.tone} ${o.basis}`; el.innerHTML = "<i></i><span></span>";
+      const el = document.createElement("button"); el.type = "button"; el.className = `near-object ${o.tone} ${o.basis} ${o.state ?? ""}`; el.innerHTML = "<i></i><span></span>";
       (el.lastChild as HTMLElement).textContent = o.name;
       el.setAttribute("aria-label", `${o.name}, about ${Math.round(o.distance[1] * LY)} light-years, ${o.basis} distance`); el.title = `${Math.round(o.distance[1] * LY)} light-years · ${o.basis} distance`;
       el.onclick = () => this.onPick(o.id);
       el.onpointerenter = (e) => this.onHover(o.id, e.clientX, e.clientY); el.onpointerleave = () => this.onHover(null, 0, 0);
+      el.style.setProperty("--d", `${(Math.random() * 1.4).toFixed(2)}s`);   // suspects appear one after another when revealed
       this.overlay.appendChild(el); this.dots.push({ o, position: dir.multiplyScalar(o.distance[1] * PC), el });
     }
     const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(seg, 3)); g.setAttribute("color", new THREE.Float32BufferAttribute(col, 3));

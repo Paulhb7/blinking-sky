@@ -124,10 +124,10 @@ function Sheet({ target, catalog, onClose }: { target: SpxTarget; catalog: SpxCa
 type Props = {
   target: SpxTarget; catalog: SpxCatalog; view: SpherexView; ready: boolean; error: string; vote?: Vote;
   onView: (next: Partial<SpherexView>) => void; onClose: () => void; onRecenter: () => void; onRetry: () => void;
-  onVote: (vote: Vote) => void; onMore?: () => void; onNext?: () => void;
+  onVote: (vote: Vote) => void; onMore?: () => void; onNext?: () => void; onReplay?: () => void;
 };
 
-export default function SpherexPanel({ target, catalog, view, ready, error, vote, onView, onClose, onRecenter, onRetry, onVote, onMore, onNext }: Props) {
+export default function SpherexPanel({ target, catalog, view, ready, error, vote, onView, onClose, onRecenter, onRetry, onVote, onMore, onNext, onReplay }: Props) {
   const [sheet, setSheet] = useState(false);
   const d = target.dwarf;
   const kinds = (["date", "colour"] as const).filter((k) => target.frames.some((f) => f.kind === k));
@@ -146,6 +146,7 @@ export default function SpherexPanel({ target, catalog, view, ready, error, vote
         <button type="button" className="spx-icon" onClick={onClose} aria-label="Close the SPHEREx panel"><X size={14} /></button>
       </header>
       <p className="spx-blurb">{target.blurb}</p>
+      {onReplay && <button type="button" className="spx-btn primary" onClick={onReplay}>How was this one found? Replay it</button>}
       {target.live && <section className="spx-card spx-live" aria-live="polite">
         {target.live.error ? <p role="alert">{target.live.error}.</p> : <>
           <div className="spx-progress"><i style={{ width: `${target.live.total ? Math.round(target.live.done / target.live.total * 100) : 3}%` }} /></div>
