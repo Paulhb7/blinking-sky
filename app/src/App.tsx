@@ -261,6 +261,13 @@ export default function App() {
     const p = parsePosition(query);
     if (p) lookAt(p[0], p[1]); else setError("Type a position such as “133.795 -7.245” or “08h55m10.8s -07°14′42″”.");
   };
+  // One of the candidates, read again from the archive as if nobody had seen it: how it was found.
+  const replay = (t: SpxTarget) => {
+    sky.current?.aimAt(t.ra, t.dec, photometricDistance(t.dwarf?.type, t.dwarf?.W2)?.[1] ?? 20);
+    goLive({ id: `${t.id}-replay`, name: t.name, ra: t.ra, dec: t.dec, group: "position", W1: t.dwarf?.W1 ?? undefined, W2: t.dwarf?.W2 ?? undefined,
+      blurb: "Replay: this is how this candidate was found. It started as a red, moving source in WISE, like the unchecked ones. The exposures are read again from the archive: blink the two colours and see whether you would have caught it.",
+      published: t.dwarf?.published ?? "" });
+  };
   // What the talk asks of the tool: the same actions a visitor would take.
   const direct: Director = {
     scene: (name) => { sky.current?.show(name); },
@@ -269,6 +276,7 @@ export default function App() {
     target: (id, kind) => { setGuide(null); choose(id); if (kind) window.setTimeout(() => setView((v) => ({ ...v, kind, playing: true })), 60); },
     selection: () => { setSuspectsShown(false); setGuide(1); setGuideRun((n) => n + 1); },
     hunt: () => { setGuide(null); nextUnchecked(); },
+    replay: (id) => { setGuide(null); const t = catalog?.targets.find((v) => v.id === id); if (t) replay(t); },
   };
   const checked = queue.filter((q) => votes[q.id]).length;
   const found = queue.filter((q) => { const v = votes[q.id]; return v?.vote === "fades" && v.R !== undefined && v.R !== null && v.R < 0.3 && (v.snr ?? 0) >= 5; }).length;
@@ -334,9 +342,7 @@ export default function App() {
         onView={(next) => { if (next.kind) autoKind.current = false; setView((v) => ({ ...v, ...next })); }} onClose={() => setPanel(false)}
         onRecenter={() => sky.current?.flyTo(target.geometry?.centerRaDeg ?? target.ra, target.geometry?.centerDecDeg ?? target.dec, target.id === "barnard" ? 0.45 : TELESCOPE_FOV, 1.2)} onRetry={() => {}}
         onVote={(vote: Vote) => setVotes(writeVote(target, vote))} onMore={live.current ? () => live.current?.more() : undefined} onNext={target.group === "queue" ? nextUnchecked : undefined}
-        onReplay={target.group === "unpublished" && !target.live ? () => { sky.current?.aimAt(target.ra, target.dec, photometricDistance(target.dwarf?.type, target.dwarf?.W2)?.[1] ?? 20); goLive({ id: `${target.id}-replay`, name: target.name, ra: target.ra, dec: target.dec, group: "position", W1: target.dwarf?.W1 ?? undefined, W2: target.dwarf?.W2 ?? undefined,
-          blurb: "Replay: this is how this candidate was found. It started as a red, moving source in WISE, like the unchecked ones. The exposures are read again from the archive: blink the two colours and see whether you would have caught it.",
-          published: target.dwarf?.published ?? "" }); } : undefined} />}
+        onReplay={target.group === "unpublished" && !target.live ? () => replay(target) : undefined} />}
     </div>
   );
 }

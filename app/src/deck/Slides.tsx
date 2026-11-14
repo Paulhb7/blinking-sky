@@ -9,6 +9,8 @@ export type Director = {
   target: (id: string, kind?: "date" | "colour") => void;
   selection: () => void;
   hunt: () => void;
+  /** one of the candidates, read again from the archive as it was found */
+  replay: (id: string) => void;
   clear: () => void;
 };
 
@@ -102,8 +104,8 @@ export default function Slides({ catalog, queueSize, direct, onClose, onLaunch, 
       </div></>) },
     // 10 — The platform, live
     { title: "A way to find the next one", sub: "Live", live: true, body: ({ active }) => (<>
-      <Run active={active} steps={[[0, () => { direct.clear(); direct.scene("sun"); }], [3.2, () => direct.hunt()]]} />
-      <LiveSlide eyebrow="What we bring" title="A platform, and a way to find the " accent="next one" caption={`${suspects} suspects are waiting. One is opened now, live: nobody has ever looked at it in SPHEREx.`} /></>) },
+      <Run active={active} steps={[[0, () => { direct.clear(); direct.scene("sun"); }], [3.2, () => direct.replay("J043050.49-072453.9")]]} />
+      <LiveSlide eyebrow="What we bring" title="A platform, and a way to find the " accent="next one" caption={`This is how one of the ${twelve} was found: a red dot from WISE, opened in SPHEREx, live. ${suspects} more are waiting for someone to look.`} /></>) },
   ];
   return <Deck brand={["Blinking ", "SKY"]} mark="Blinking Sky · NASA Space Apps 2026" slides={slides} onClose={onClose} onLaunch={onLaunch} onSlide={onSlide} />;
 }
