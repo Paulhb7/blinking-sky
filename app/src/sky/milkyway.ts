@@ -66,10 +66,10 @@ const CLOUD_FRAG = /* glsl */ `
 export const GALACTIC_CENTRE = new THREE.Vector3(MILKY_WAY.r0, -MILKY_WAY.z0, 0);
 
 /** The model as two point clouds, placed so that the Sun is at the origin. `update` takes pixels per unit angle. */
-export function milkyWayDisk(starCount = 300000, cloudCount = 3600) {
+export function milkyWayDisk(starCount = 300000, cloudCount = 3600, sprite = 1) {
   const data = sample(starCount, cloudCount);
-  const starUniforms = { uSize: { value: 0.085 }, uPx: { value: 800 }, uDense: { value: new THREE.Color("#2885ff") }, uSparse: { value: new THREE.Color("#ffa27a") }, uBright: { value: 0.3 } };
-  const cloudUniforms = { uSize: { value: 2.2 }, uPx: { value: 800 }, uTint: { value: new THREE.Color("#ffd0d6") }, uOpacity: { value: 0.026 } };
+  const starUniforms = { uSize: { value: 0.085 * sprite }, uPx: { value: 800 }, uDense: { value: new THREE.Color("#2885ff") }, uSparse: { value: new THREE.Color("#ffa27a") }, uBright: { value: 0.3 } };
+  const cloudUniforms = { uSize: { value: 2.2 * sprite }, uPx: { value: 800 }, uTint: { value: new THREE.Color("#ffd0d6") }, uOpacity: { value: 0.026 } };
   const stars = new THREE.BufferGeometry();
   stars.setAttribute("position", new THREE.BufferAttribute(data.stars, 3)); stars.setAttribute("aTint", new THREE.BufferAttribute(data.tint, 1));
   const starPoints = new THREE.Points(stars, new THREE.ShaderMaterial({ vertexShader: STAR_VERT, fragmentShader: STAR_FRAG, uniforms: starUniforms, blending: THREE.AdditiveBlending, depthWrite: false, depthTest: false, transparent: true }));

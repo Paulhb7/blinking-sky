@@ -134,7 +134,7 @@ export default function SpherexPanel({ target, catalog, view, ready, error, vote
   const frames = target.frames.map((f, index) => ({ f, index })).filter(({ f }) => f.kind === view.kind);
   const current = target.frames[view.frame];
   const shift = expectedShift(target);
-  const [chip, chipClass] = target.id.startsWith("spx-") ? ["Published SPHEREx dwarf", "known"] : CHIP[target.group];
+  const [chip, chipClass] = target.id.startsWith("spx-") ? ["Published SPHEREx dwarf", "known"] : target.id.startsWith("gal-") ? ["Galaxy · measured distance", "known"] : CHIP[target.group];
   return (
     <aside className="spx-panel" aria-label={`SPHEREx observations of ${target.name}`}>
       <header className="spx-head">
@@ -198,7 +198,7 @@ export default function SpherexPanel({ target, catalog, view, ready, error, vote
         <p className="spx-small">Points: measured on {d.images} single exposures, binned, 1σ bars.{d.template ? " Line: best-fitting template (Gagné et al. 2026)." : ""}{d.quick ? " Quick-look photometry made in this browser; a PSF-fitted analysis is the reference." : ""}</p>
         <dl className="spx-facts">
           <div><dt>W2</dt><dd>{fmt(d.W2)}</dd></div><div><dt>Signal / noise</dt><dd>{fmt(d.snr, 1)}</dd></div>
-          <div><dt>Motion</dt><dd>{target.motion ? `${fmt(target.motion.total)}″/yr` : "—"}</dd></div><div><dt>Dates</dt><dd>{monthLabel(d.dates[0])} – {monthLabel(d.dates[1])}</dd></div>
+          <div><dt>Motion</dt><dd>{target.motion ? `${fmt(target.motion.total)}″/yr` : "—"}</dd></div><div><dt>Dates</dt><dd>{d.dates[0] > 0 ? `${monthLabel(d.dates[0])} – ${monthLabel(d.dates[1])}` : "—"}</dd></div>
         </dl>
       </section>}
 

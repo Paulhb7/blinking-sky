@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { Galaxy, GALACTIC_CENTRE, type GalaxyObject } from "./galaxy";
+import { Galaxy, GALACTIC_CENTRE, type GalaxyObject, type Picked } from "./galaxy";
 import { Portrait, type PortraitLook } from "./portrait";
 
 /** The night sky of Blinking Sky: the real bright stars, an equatorial grid, markers, and archived frames placed where
@@ -96,7 +96,7 @@ export class Sky {
   private stagePortrait!: HTMLDivElement;
   private staged = false;
   /** Pointer over something in the galaxy: a published dwarf, one of the listed objects, or nothing. */
-  onHover: (what: ({ kind: "dwarf" } & NonNullable<ReturnType<Galaxy["dwarfAt"]>>) | { kind: "object"; id: string } | null, x: number, y: number) => void = () => {};
+  onHover: (what: Picked | { kind: "object"; id: string } | null, x: number, y: number) => void = () => {};
   /** Where the next flight should end when the target is not one of the listed objects (a clicked dwarf). */
   destination: THREE.Vector3 | null = null;
   onPick: (id: string) => void = () => {};
@@ -205,9 +205,11 @@ export class Sky {
     if (this.mode === "galaxy") {
       // Travel through the galaxy to the object and stop on the Sun's side of it: its picture and 3D view appear there.
       const dir = this.galaxy.direction(ra, dec), at = this.galaxy.positionOf(this.selected) ?? this.destination ?? dir.clone().multiplyScalar(0.002);
+      // Stop close to a star, well back from a galaxy: a few parsecs, or a few hundred thousand light-years.
+      const stop = Math.max(0.0035, at.length() * 0.0025); this.galaxy.arrival = stop;
       this.destination = null; this.galaxy.home = false; this.bound = true; this.staged = false;
       this.look = { ra, dec, fov };   // so that switching to the sky view lands on the same object
-      this.galaxy.go(at, 0.0035, 3.4, () => { this.bound = false; this.staged = true; }, dir.clone().negate());
+      this.galaxy.go(at, stop, 3.4, () => { this.bound = false; this.staged = true; }, dir.clone().negate());
       return;
     }
     const from = direction(this.look.ra, this.look.dec), to = direction(ra, dec);
@@ -231,8 +233,9 @@ export class Sky {
   get level() { return this.mode; }
   setGalaxyFrame(meta: Parameters<Galaxy["setFrame"]>[0]) { this.galaxy.setFrame(meta); }
   setDwarfs(buffer: ArrayBuffer, meta: Parameters<Galaxy["setDwarfs"]>[1]) { this.galaxy.setDwarfs(buffer, meta); }
+  setGalaxies(buffer: ArrayBuffer, meta: Parameters<Galaxy["setGalaxies"]>[1]) { this.galaxy.setGalaxies(buffer, meta); }
   /** Called when a published SPHEREx dwarf is clicked in the galaxy. */
-  onDwarf: (dwarf: NonNullable<ReturnType<Galaxy["dwarfAt"]>>) => void = () => {};
+  onDwarf: (picked: Picked) => void = () => {};
   setObjects(objects: GalaxyObject[]) { this.galaxy.setObjects(objects); }
   /** The two views of the same thing: the galaxy map, or the night sky. Each keeps the selected object in front. */
   goLevel(level: "galaxy" | "sky") {
@@ -265,11 +268,11 @@ export class Sky {
     // Over the galaxy, report the published dwarf under the pointer: the interface previews it, and it can be clicked.
     if (this.drag || this.mode !== "galaxy" || this.galaxy.home || e.target !== this.canvas) { if (this.hovered !== -1 && e.target === this.canvas) { this.hovered = -1; this.onHover(null, 0, 0); } this.canvas.style.cursor = ""; return; }
     const now = performance.now(); if (now - this.hoverAt < 60) return; this.hoverAt = now;
-    const rect = this.canvas.getBoundingClientRect(), hit = this.galaxy.dwarfAt(e.clientX - rect.left, e.clientY - rect.top, rect.width, rect.height);
+    const rect = this.canvas.getBoundingClientRect(), hit = this.galaxy.pick(e.clientX - rect.left, e.clientY - rect.top, rect.width, rect.height);
     this.canvas.style.cursor = hit ? "pointer" : "";
     if ((hit?.index ?? -1) === this.hovered) return;
     this.hovered = hit?.index ?? -1;
-    this.onHover(hit ? { kind: "dwarf", ...hit } : null, e.clientX, e.clientY);
+    this.onHover(hit, e.clientX, e.clientY);
   };
   private move = (e: PointerEvent) => {
     this.hover(e);
@@ -284,7 +287,7 @@ export class Sky {
     if (!this.drag) return;
     const still = this.drag.moved < 4; this.drag = null;
     if (still && e.target === this.canvas && this.mode === "galaxy" && !this.galaxy.home) {
-      const rect = this.canvas.getBoundingClientRect(), hit = this.galaxy.dwarfAt(e.clientX - rect.left, e.clientY - rect.top, rect.width, rect.height);
+      const rect = this.canvas.getBoundingClientRect(), hit = this.galaxy.pick(e.clientX - rect.left, e.clientY - rect.top, rect.width, rect.height);
       if (hit) { this.hovered = -1; this.onHover(null, 0, 0); this.onDwarf(hit); }
     }
     if (still && e.target === this.canvas && this.mode === "sky") { const p = this.unproject(e.clientX, e.clientY); if (p) this.onSkyClick(p[0], p[1]); }
@@ -292,7 +295,7 @@ export class Sky {
   private wheel = (e: WheelEvent) => {
     e.preventDefault(); this.flight = null;
     const factor = Math.exp(e.deltaY * 0.0016);
-    if (this.mode === "galaxy") { if (!this.galaxy.home) { this.galaxy.zoom(factor); if (this.galaxy.distance > 0.03) this.staged = false; } return; }
+    if (this.mode === "galaxy") { if (!this.galaxy.home) { this.galaxy.zoom(factor); if (this.galaxy.distance > this.galaxy.arrival * 8) this.staged = false; } return; }
     this.look.fov = Math.max(0.03, Math.min(100, this.look.fov * factor));
   };
   private unproject(clientX: number, clientY: number): [number, number] | null {

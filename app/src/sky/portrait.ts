@@ -1,11 +1,12 @@
 import * as THREE from "three";
+import { milkyWayDisk } from "./milkyway";
 
 /** What the object might look like, drawn from what was measured: an illustration, never an image.
  * - kind: what the measurements say it is;
  * - temperature (K): from the fitted spectral type, sets the colour;
  * - methane (0–1): depth of the methane dip, sets the banding and the violet cast;
  * - brightness (0–1): the flux at the current date or colour, relative to its maximum. */
-export type PortraitLook = { kind: "dwarf" | "star" | "unknown"; temperature: number; methane: number; brightness: number; seed: number };
+export type PortraitLook = { kind: "dwarf" | "star" | "unknown" | "galaxy"; temperature: number; methane: number; brightness: number; seed: number };
 
 const VERT = /* glsl */ `varying vec3 vN; varying vec3 vP; void main() { vN = normalize(normalMatrix * normal); vP = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`;
 const FRAG = /* glsl */ `
@@ -63,6 +64,9 @@ export class Portrait {
   private uniforms = { uTime: { value: 0 }, uTemp: { value: 800 }, uMethane: { value: 0.8 }, uBright: { value: 1 }, uSeed: { value: 0 }, uStar: { value: 0 }, uFade: { value: 1 }, uUnknown: { value: 0 } };
   private glowUniforms = { uColour: { value: new THREE.Color(0.6, 0.3, 0.5) }, uPower: { value: 0.5 }, uFade: { value: 1 } };
   private target: PortraitLook | null = null;
+  /** A spiral galaxy, for objects that are galaxies: the same schematic model as the map, small and tilted. */
+  private spiral = milkyWayDisk(26000, 400, 1.0);
+  private tilt = new THREE.Group();
   private bright = 1;
   active = false;
 
@@ -73,11 +77,13 @@ export class Portrait {
     this.glow = new THREE.Mesh(new THREE.PlaneGeometry(5.2, 5.2), new THREE.ShaderMaterial({ vertexShader: GLOW_VERT, fragmentShader: GLOW_FRAG, uniforms: this.glowUniforms, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
     this.glow.position.z = -1.2;
     this.scene.add(this.glow, this.ball);
+    this.spiral.group.position.set(0, 0, 0); this.spiral.group.scale.setScalar(0.085); this.tilt.add(this.spiral.group); this.tilt.rotation.set(1.05, 0, 0.35); this.tilt.visible = false; this.scene.add(this.tilt);
   }
 
   set(look: PortraitLook | null) {
     this.target = look; this.active = Boolean(look);
     if (!look) return;
+    const galaxy = look.kind === "galaxy"; this.tilt.visible = galaxy; this.ball.visible = this.glow.visible = !galaxy;
     this.uniforms.uTemp.value = look.temperature; this.uniforms.uMethane.value = look.methane; this.uniforms.uSeed.value = look.seed; this.uniforms.uStar.value = look.kind === "star" ? 1 : 0; this.uniforms.uUnknown.value = look.kind === "unknown" ? 1 : 0;
     const t = Math.max(0, Math.min(1, (look.temperature - 350) / 950));
     if (look.kind === "unknown") this.glowUniforms.uColour.value.setRGB(0.3, 0.38, 0.5); else if (look.kind === "star") this.glowUniforms.uColour.value.setRGB(1.0, 0.45, 0.2); else this.glowUniforms.uColour.value.setRGB(0.4 + 0.5 * t, 0.25 + 0.1 * t, 0.6 - 0.2 * t);
@@ -89,6 +95,7 @@ export class Portrait {
     this.uniforms.uTime.value += dt;
     this.bright += (this.target.brightness - this.bright) * Math.min(1, dt * 5);
     this.uniforms.uBright.value = this.bright; this.uniforms.uFade.value = this.glowUniforms.uFade.value = Math.max(0, Math.min(1, fade));
+    if (this.target.kind === "galaxy") { this.spiral.group.rotation.y -= dt * 0.12; this.spiral.update(size * renderer.getPixelRatio() / (2 * Math.tan(15 * Math.PI / 180)), 0.42 * Math.max(0, Math.min(1, fade))); }
     renderer.clearDepth();
     renderer.setViewport(x, y, size, size); renderer.setScissor(x, y, size, size); renderer.setScissorTest(true);
     renderer.render(this.scene, this.camera);

@@ -50,6 +50,7 @@ export default function App() {
   const [presenting, setPresenting] = useState(params.has("present"));
   const [level, setLevel] = useState<"galaxy" | "sky">("galaxy");
   const [hovered, setHovered] = useState<Hovered | null>(null);
+  const [galaxyCount, setGalaxyCount] = useState(0);
   const [published, setPublished] = useState<{ count: number; measured: number; estimated: number } | null>(null);
   const live = useRef<ReturnType<typeof startLive> | null>(null);
   const autoKind = useRef(true);
@@ -66,7 +67,10 @@ export default function App() {
     s.onLevel = setLevel;
     fetch(`${BASE}/data/stars.bin`).then((r) => r.arrayBuffer()).then((b) => s.setStars(b)).catch(() => {});
     Promise.all([fetch(`${BASE}/data/galaxy.json`).then((r) => r.json()), fetch(`${BASE}/data/spherex-dwarfs.bin`).then((r) => r.arrayBuffer()), fetch(`${BASE}/data/spherex-dwarfs.json`).then((r) => r.json())])
-      .then(([frame, b, meta]) => { setRelation(meta.absoluteW2); s.setGalaxyFrame(frame); s.setDwarfs(b, meta); setPublished({ count: meta.count, measured: meta.measured, estimated: meta.estimated }); }).catch(() => {});
+      .then(([frame, b, meta]) => {
+        setRelation(meta.absoluteW2); s.setGalaxyFrame(frame); s.setDwarfs(b, meta); setPublished({ count: meta.count, measured: meta.measured, estimated: meta.estimated });
+        return Promise.all([fetch(`${BASE}/data/galaxies.bin`).then((r) => r.arrayBuffer()), fetch(`${BASE}/data/galaxies.json`).then((r) => r.json())]);
+      }).then(([b, meta]) => { s.setGalaxies(b, meta); setGalaxyCount(meta.count); }).catch(() => {});
     Promise.all([loadSpherexCatalog(BASE), loadQueue(BASE)]).then(([c, q]) => { setCatalog(c); setQueue(q.sources); }).catch((e) => setError(String(e.message ?? e)));
     return () => { live.current?.stop(); s.dispose(); sky.current = null; };
   }, []);
@@ -137,11 +141,13 @@ export default function App() {
     if (!sky.current) return;
     sky.current.onHover = (what, x, y) => {
       if (!what) return setHovered(null);
+      if (what.kind === "galaxy") return setHovered({ name: what.name, ra: what.ra, dec: what.dec, x, y, line: `Galaxy · ${Math.round(what.distance * 3.26 / 1e6)} million light-years` });
       if (what.kind === "dwarf") {
         const target = catalog?.targets.find((t) => Math.hypot((t.ra - what.ra) * Math.cos(what.dec * Math.PI / 180), t.dec - what.dec) < 0.004);
         return setHovered({ name: what.name, ra: what.ra, dec: what.dec, x, y, target, line: `SPHEREx type ${what.type} · ${Math.round(what.distance * 3.26)} light-years${what.measured ? "" : " (estimated)"}` });
       }
-      const target = catalog?.targets.find((t) => t.id === what.id), q = queue.find((v) => v.id === what.id);
+      if (what.kind !== "object") return;
+      const id = what.id, target = catalog?.targets.find((t) => t.id === id), q = queue.find((v) => v.id === id);
       if (target) setHovered({ name: target.name, ra: target.ra, dec: target.dec, x, y, target, line: "Candidate · no publication found" });
       else if (q) setHovered({ name: q.name, ra: q.ra, dec: q.dec, x, y, line: `Unchecked · red in WISE, motion ${q.pmTotal.toFixed(2)}″ a year at ${q.pmSigma.toFixed(1)}σ` });
     };
@@ -150,13 +156,16 @@ export default function App() {
   // A published SPHEREx dwarf clicked in the galaxy: fly to it and rebuild its image and spectrum from the archive.
   useEffect(() => {
     if (!sky.current) return;
-    sky.current.onDwarf = (dwarf) => {
-      const known = catalog?.targets.find((t) => Math.hypot((t.ra - dwarf.ra) * Math.cos(dwarf.dec * Math.PI / 180), t.dec - dwarf.dec) < 0.004);
+    sky.current.onDwarf = (picked) => {
+      const known = catalog?.targets.find((t) => Math.hypot((t.ra - picked.ra) * Math.cos(picked.dec * Math.PI / 180), t.dec - picked.dec) < 0.004);
       if (known) return choose(known.id);
-      sky.current!.destination = dwarf.position;
-      goLive({ id: `spx-${dwarf.index}`, name: dwarf.name, ra: dwarf.ra, dec: dwarf.dec, group: "position", knownType: dwarf.type,
-        blurb: `SPHEREx type ${dwarf.type}, about ${Math.round(dwarf.distance * 3.26)} light-years away (${dwarf.measured ? "measured parallax" : "distance estimated from type and brightness"}). Its SPHEREx type is published: here its image and spectrum are rebuilt from the archive.`,
-        published: `In the published SPHEREx table of ultracool dwarfs (Gagné et al. 2026), group “${dwarf.group}”` });
+      sky.current!.destination = picked.position;
+      if (picked.kind === "galaxy") return goLive({ id: `gal-${picked.index}`, name: picked.name, ra: picked.ra, dec: picked.dec, group: "position", knownType: "galaxy",
+        blurb: `A galaxy about ${Math.round(picked.distance * 3.26 / 1e6)} million light-years away (redshift from the 2MASS Redshift Survey). Its SPHEREx image is built here from the archive.`,
+        published: "In the 2MASS Redshift Survey (Huchra et al. 2012)" });
+      goLive({ id: `spx-${picked.index}`, name: picked.name, ra: picked.ra, dec: picked.dec, group: "position", knownType: picked.type,
+        blurb: `SPHEREx type ${picked.type}, about ${Math.round(picked.distance * 3.26)} light-years away (${picked.measured ? "measured parallax" : "distance estimated from type and brightness"}). Its SPHEREx type is published: here its image and spectrum are rebuilt from the archive.`,
+        published: `In the published SPHEREx table of ultracool dwarfs (Gagné et al. 2026), group “${picked.group}”` });
     };
   }, [catalog, choose, goLive]);
   // Home: the sky drifts, wide. Entering it flies to the first field.
@@ -210,6 +219,7 @@ export default function App() {
     const d = target?.dwarf, type = d?.type ?? d?.knownType, hasDip = Boolean(d && d.dip !== "none" && d.snr >= 5);
     const head = (note: string) => `<b>3D view</b><em>${note}</em>`;
     if (target?.id === "barnard") { look = { kind: "star", temperature: 3200, methane: 0, brightness: 1, seed: 3 }; caption = head("Illustration · not an image") + "<span>Red dwarf star, about 3,200 K</span>"; }
+    else if (target && type === "galaxy") { look = { kind: "galaxy", temperature: 0, methane: 0, brightness: 1, seed: hashSeed(target.id) }; caption = head("Illustration · not an image") + "<span>A galaxy: billions of stars, far outside the Milky Way</span>"; }
     else if (target && d && target.group !== "rejected" && (hasDip || type)) {
       // Drawn from what is known: the type sets the temperature and colour, the methane index the bands.
       const temperature = temperatureOf(type), measured = Number.isFinite(d.R);
@@ -285,6 +295,7 @@ export default function App() {
           <li><i className="lg small" style={{ background: "linear-gradient(90deg, #ffa866, #ff5c47, #eb5ca8, #9e73ff)" }} /><span><b>Small coloured dots</b> · dwarfs already typed by SPHEREx{published ? ` (${published.count.toLocaleString("en-GB")})` : ""}: M orange, L red, T magenta, Y violet</span></li>
           <li><i className="lg ring amber" /><span><b>Yellow, filled</b> · our 12 candidates with no publication found</span></li>
           <li><i className="lg hollow" /><span><b>Yellow, hollow</b> · {queue.length || 382} sources nobody has checked</span></li>
+          <li><i className="lg gal" /><span><b>White dots, far out</b> · {galaxyCount ? galaxyCount.toLocaleString("en-GB") : "43,463"} galaxies at a measured distance. Zoom out past the Milky Way</span></li>
           <li><i className="lg line" /><span><b>Line</b> · its distance is estimated: the candidate is somewhere along it</span></li>
         </ul>
         <p className="legend-foot">The galaxy&apos;s shape is a model. Hollow dots sit where they would be <b>if</b> they are cold dwarfs. Rest the pointer on a dot for a first look; click to fly there.</p>

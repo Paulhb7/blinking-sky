@@ -46,6 +46,18 @@ const STAR_FRAG = /* glsl */ `
   varying vec3 vTint; varying float vAlpha;
   void main() { float r = length(gl_PointCoord - 0.5) * 2.0; float core = smoothstep(0.45, 0.0, r), halo = pow(max(0.0, 1.0 - r), 2.2) * 0.5; gl_FragColor = vec4(mix(vTint, vec3(1.0), core * 0.45) * (core + halo) * vAlpha, 1.0); }`;
 
+const GAL_VERT = /* glsl */ `
+  attribute float aK; uniform float uScale, uAlpha; varying float vAlpha;
+  void main() {
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    gl_PointSize = clamp(7.5 - aK * 0.42, 2.0, 5.5) * uScale;   // brighter galaxies drawn larger
+    vAlpha = clamp(1.6 - aK * 0.1, 0.35, 1.0) * uAlpha;
+  }`;
+const GAL_FRAG = /* glsl */ `
+  varying float vAlpha;
+  void main() { float r = length(gl_PointCoord - 0.5) * 2.0; float a = pow(max(0.0, 1.0 - r), 1.8); gl_FragColor = vec4(vec3(0.86, 0.9, 1.0) * a * vAlpha, 1.0); }`;
+export type Picked = { kind: "dwarf" | "galaxy"; index: number; name: string; type: string; group: string; ra: number; dec: number; /** parsecs */ distance: number; measured: boolean; position: THREE.Vector3 };
+
 type Travel = { f0: THREE.Vector3; f1: THREE.Vector3; d0: number; d1: number; t: number; duration: number; done?: () => void; yaw?: number; pitch?: number };
 
 export class Galaxy {
@@ -56,6 +68,10 @@ export class Galaxy {
   private starUniforms = { uScale: { value: 1 }, uSize: { value: 3 } };
   private dwarfs: { position: Float32Array; meta: DwarfMeta; sky: Float32Array; distance: Float32Array; basis: Uint8Array; group: Uint8Array } | null = null;
   private framed = false;
+  private galUniforms = { uScale: { value: 1 }, uAlpha: { value: 0 } };
+  private galaxies: { position: Float32Array; names: string[]; count: number } | null = null;
+  /** Camera distance at which the selected object's picture was put on screen. */
+  arrival = 0.0035;
   private rot = new THREE.Matrix3();
   private objects: GalaxyObject[] = [];
   private dots: { o: GalaxyObject; position: THREE.Vector3; el: HTMLButtonElement }[] = [];
@@ -127,6 +143,31 @@ export class Galaxy {
     points.frustumCulled = false; points.renderOrder = 2; this.scene.add(points);
     this.dwarfs = { position, meta, sky, distance, basis: b8, group: g8 };
   }
+  /** Galaxies with a measured redshift: x, y, z (kpc), K magnitude as float32. */
+  setGalaxies(buffer: ArrayBuffer, meta: { count: number; names: string[] }) {
+    const data = new Float32Array(buffer), n = meta.count, position = new Float32Array(n * 3), k = new Float32Array(n);
+    for (let i = 0; i < n; i++) { position.set([data[i * 4], data[i * 4 + 1], data[i * 4 + 2]], i * 3); k[i] = Number.isFinite(data[i * 4 + 3]) ? data[i * 4 + 3] : 11.5; }
+    const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.BufferAttribute(position, 3)); g.setAttribute("aK", new THREE.BufferAttribute(k, 1));
+    const points = new THREE.Points(g, new THREE.ShaderMaterial({ vertexShader: GAL_VERT, fragmentShader: GAL_FRAG, uniforms: this.galUniforms, blending: THREE.AdditiveBlending, depthWrite: false, depthTest: false, transparent: true }));
+    points.frustumCulled = false; points.renderOrder = 1; this.scene.add(points);
+    this.galaxies = { position, names: meta.names, count: n };
+  }
+  /** What is drawn nearest to a screen point, within a few pixels: a published dwarf near the Sun, a galaxy from outside. */
+  pick(x: number, y: number, width: number, height: number): Picked | null {
+    const outside = this.camera.position.length() > 150, g = this.galaxies;
+    if (!outside) { const d = this.dwarfAt(x, y, width, height); return d && { kind: "dwarf", ...d }; }
+    if (!g) return null;
+    const v = new THREE.Vector3(); let best = -1, bestD = 64;
+    for (let k = 0; k < g.count; k++) {
+      v.set(g.position[k * 3], g.position[k * 3 + 1], g.position[k * 3 + 2]).project(this.camera);
+      if (v.z > 1 || v.z < -1) continue;
+      const dx = (v.x + 1) / 2 * width - x, dy = (1 - v.y) / 2 * height - y, q = dx * dx + dy * dy;
+      if (q < bestD) { bestD = q; best = k; }
+    }
+    if (best < 0) return null;
+    const position = new THREE.Vector3(g.position[best * 3], g.position[best * 3 + 1], g.position[best * 3 + 2]), [ra, dec] = this.toSky(position);
+    return { kind: "galaxy", index: best, name: g.names[best] || `2MRS galaxy ${best}`, type: "galaxy", group: "2MASS Redshift Survey", ra, dec, distance: position.length() * 1000, measured: true, position };
+  }
   /** The published dwarf drawn nearest to a screen point, within a few pixels. */
   dwarfAt(x: number, y: number, width: number, height: number) {
     const d = this.dwarfs; if (!d) return null;
@@ -165,7 +206,7 @@ export class Galaxy {
   positionOf(id: string) { return this.dots.find((d) => d.o.id === id)?.position ?? null; }
 
   rotate(dx: number, dy: number) { this.travel = null; this.yaw -= dx * 0.005; this.pitch = Math.max(-1.5, Math.min(1.5, this.pitch + dy * 0.005)); }
-  zoom(factor: number) { this.travel = null; this.distance = Math.max(4e-4, Math.min(90, this.distance * factor)); }
+  zoom(factor: number) { this.travel = null; this.distance = Math.max(4e-4, Math.min(9e5, this.distance * factor)); }
   /** Glide the focus and the zoom together; distances are interpolated in log so six orders of magnitude feel even. */
   go(focus: THREE.Vector3, distance: number, seconds: number, done?: () => void, from?: THREE.Vector3) {
     this.travel = { f0: this.focus.clone(), f1: focus.clone(), d0: this.distance, d1: distance, t: 0, duration: seconds, done };
@@ -186,21 +227,24 @@ export class Galaxy {
       this.distance = Math.exp(Math.log(tr.d0) + (Math.log(tr.d1) - Math.log(tr.d0)) * ed);
       if (tr.yaw !== undefined && tr.pitch !== undefined) { const k = Math.min(1, dt * 2.6); this.yaw += Math.atan2(Math.sin(tr.yaw - this.yaw), Math.cos(tr.yaw - this.yaw)) * k; this.pitch += (tr.pitch - this.pitch) * k; }
       if (tr.t >= 1) { this.travel = null; tr.done?.(); }
-    } else if (!dragging && (this.home || this.distance > 2)) this.yaw += dt * (this.home ? 0.03 : 0.012);
+    } else if (!dragging && (this.home || (this.distance > 2 && this.distance < 150))) this.yaw += dt * (this.home ? 0.03 : 0.012);
     const p = new THREE.Vector3(Math.cos(this.pitch) * Math.cos(this.yaw), Math.sin(this.pitch), Math.cos(this.pitch) * Math.sin(this.yaw)).multiplyScalar(this.distance).add(this.focus);
-    this.camera.aspect = width / height; this.camera.near = Math.max(1e-6, this.distance * 0.02); this.camera.far = Math.max(200, this.distance * 40);
+    this.camera.aspect = width / height; this.camera.near = Math.max(1e-6, this.distance * 0.02); this.camera.far = 5e6;   // the farthest galaxies are 700 megaparsecs away
     const shift = this.home && width > 900 ? -width * 0.2 : 0;
     if (shift) this.camera.setViewOffset(width, height, shift, 0, width, height); else this.camera.clearViewOffset();
     this.camera.position.copy(p); this.camera.lookAt(this.focus); this.camera.updateProjectionMatrix(); this.camera.updateMatrixWorld();
     const fromSun = p.length();
-    // Dots stay a readable size at every zoom; the model dims once the camera is inside the disk, among the dwarfs.
-    this.starUniforms.uScale.value = pixelRatio; this.starUniforms.uSize.value = fromSun > 2 ? 2.4 : fromSun > 0.3 ? 4 : 6.5;
-    this.disk.update(height / (2 * Math.tan(this.camera.fov * DEG / 2)), THREE.MathUtils.lerp(0.12, 1, THREE.MathUtils.smoothstep(fromSun, 0.4, 4)));
     const place = (v: THREE.Vector3, el: HTMLElement, show: boolean) => {
       const q = v.clone().project(this.camera), on = show && q.z < 1 && q.z > -1 && Math.abs(q.x) < 1.05 && Math.abs(q.y) < 1.05;
       el.style.display = on ? "" : "none";
       if (on) el.style.transform = `translate(${(q.x + 1) / 2 * width}px, ${(1 - q.y) / 2 * height}px)`;
     };
+    // Dots stay a readable size at every zoom; the model dims once the camera is inside the disk, among the dwarfs.
+    this.starUniforms.uScale.value = pixelRatio; this.starUniforms.uSize.value = fromSun > 2 ? 2.4 : fromSun > 0.3 ? 4 : 6.5;
+    // From far outside, our galaxy shrinks to a few pixels: its light is turned down so it does not burn out.
+    this.disk.update(height / (2 * Math.tan(this.camera.fov * DEG / 2)), THREE.MathUtils.lerp(0.12, 1, THREE.MathUtils.smoothstep(fromSun, 0.4, 4)) * Math.min(1, Math.pow(260 / Math.max(260, fromSun), 1.7) + 0.004));
+    this.galUniforms.uScale.value = pixelRatio; this.galUniforms.uAlpha.value = THREE.MathUtils.smoothstep(fromSun, 60, 600);
+    (this.here.lastChild as HTMLElement).textContent = fromSun > 150 ? "Milky Way · you are here" : "You are here";
     place(new THREE.Vector3(0, 0, 0), this.here, fromSun > 0.25);
     this.here.classList.toggle("quiet", fromSun < 2);
     const local = fromSun < 0.45;

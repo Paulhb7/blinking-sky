@@ -157,3 +157,5 @@ p, h1, h2, h3, figure, dl, dd { margin: 0; }
 .sky-stage-foot { margin-top: 14px; margin-left: -6px; font: 10px var(--font-geist-mono); color: var(--faint); }
 .app[data-screen="home"] .sky-stage, .app[data-presenting] .sky-stage, .app[data-screen="home"] .sky-portrait-label, .app[data-presenting] .sky-portrait-label { display: none !important; }
 .sky-stage-wait { display: none; place-items: center; aspect-ratio: 1; outline: 1px dashed rgb(246 207 141 / 0.5); outline-offset: 6px; background: rgb(0 0 0 / 0.55); font: 10px var(--font-geist-mono); color: var(--faint); text-align: center; padding: 12px; }
+.lg.gal { width: 6px; height: 6px; border-radius: 50%; background: #dfe7ff; box-shadow: 0 0 6px #dfe7ff; }
+.near-object.far span { display: none; } .near-object.far.named span, .near-object.far:hover span { display: inline; }
