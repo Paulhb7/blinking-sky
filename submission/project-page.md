@@ -76,25 +76,6 @@ To say what an object is, we use one simple test, the methane index: the flux at
 
 The twelve candidates, from the clearest to the most fragile (methane index below 0.30 means a dip):
 
-| # | Designation (CWISE) | Fitted type | W2 | S/N | Methane index | Motion (″/yr) |
-|---|---|---|---|---|---|---|
-| 1 | J235953.52−280957.6 | T7 ± 1 | 15.05 | 12.4 | 0.03 ± 0.05 | 0.28 |
-| 2 | J043050.49−072453.9 | T7 ± 1 | 15.52 | 10.3 | 0.09 ± 0.07 | 0.29 |
-| 3 | J111646.88−233305.8 | T7 ± 1 | 15.34 | 10.1 | 0.05 ± 0.07 | 0.33 |
-| 4 | J121122.23−160045.9 | T7 ± 1 | 15.30 | 8.2 | 0.03 ± 0.09 | 0.25 |
-| 5 | J143401.92−065526.3 | T8 ± 1 | 15.78 | 7.6 | 0.09 ± 0.13 | 0.32 |
-| 6 | J020114.67−325005.1 | T7 ± 1 | 15.64 | 7.1 | 0.11 ± 0.08 | 0.36 |
-| 7 | J114142.55+592837.2 | T7 ± 1 | 15.53 | 6.9 | 0.06 ± 0.12 | 0.24 |
-| 8 | J101027.39+152220.6 | T7 ± 1 | 15.51 | 6.9 | 0.03 ± 0.14 | 0.27 |
-| 9 | J000415.20−213707.8 | T7 ± 1 | 15.53 | 6.6 | −0.03 ± 0.10 | 0.31 |
-| 10 | J140138.51−200050.1 | T8 ± 1 | 15.80 | 6.4 | −0.03 ± 0.12 | 0.36 |
-| 11 | J013425.70+333752.4 | T7 ± 1 | 15.57 | 5.7 | 0.01 ± 0.17 | 0.38 |
-| 12 | J234020.49−084813.3 | T7 ± 1 | 15.65 | 5.0 | 0.02 ± 0.16 | 0.40 |
-
-Numbers 8 and 11 have a faint neighbour inside the SPHEREx pixel, and number 12 is at the detection limit.
-
-If the form does not accept tables, the same list as plain lines:
-
 1. CWISE J235953.52−280957.6 · T7 ± 1 · W2 15.05 · S/N 12.4 · index 0.03 ± 0.05
 2. CWISE J043050.49−072453.9 · T7 ± 1 · W2 15.52 · S/N 10.3 · index 0.09 ± 0.07
 3. CWISE J111646.88−233305.8 · T7 ± 1 · W2 15.34 · S/N 10.1 · index 0.05 ± 0.07
@@ -107,6 +88,8 @@ If the form does not accept tables, the same list as plain lines:
 10. CWISE J140138.51−200050.1 · T8 ± 1 · W2 15.80 · S/N 6.4 · index −0.03 ± 0.12
 11. CWISE J013425.70+333752.4 · T7 ± 1 · W2 15.57 · S/N 5.7 · index 0.01 ± 0.17
 12. CWISE J234020.49−084813.3 · T7 ± 1 · W2 15.65 · S/N 5.0 · index 0.02 ± 0.16
+
+Numbers 8 and 11 have a faint neighbour inside the SPHEREx pixel, and number 12 is at the detection limit.
 
 ![A candidate in the methane band, with its SPHEREx spectrum](images/08-candidate-methane-band.png)
 *A candidate in the methane band, with its SPHEREx spectrum*
