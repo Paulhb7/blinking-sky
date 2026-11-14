@@ -116,6 +116,12 @@ The same gesture, click and blink, works at three scales of the Universe.
 
 The visitor zooms from one scale to the next without leaving the map.
 
+![The Milky Way in the tool, with the Sun marked “You are here”](images/11-milky-way.png)
+*The Milky Way in the tool, with the Sun marked “You are here”*
+
+![43,463 galaxies around the Milky Way, at their measured distances](images/12-cosmic-web-galaxies.png)
+*43,463 galaxies around the Milky Way, at their measured distances*
+
 ![NGC 4639, a galaxy 49 million light-years away, opened from the map](images/02-galaxy-ngc4639.png)
 *NGC 4639, a galaxy 49 million light-years away, opened from the map*
 

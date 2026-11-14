@@ -14,6 +14,7 @@ En ligne : https://blinking-sky.vercel.app
 | ![Étoile de Barnard](submission/images/03-star-barnard.png) L'étoile de Barnard, entre deux dates | ![WISE 0855](submission/images/07-brown-dwarf-wise0855-dates.png) WISE 0855−0714, naine brune qui se déplace |
 | ![Candidate](submission/images/08-candidate-methane-band.png) Une candidate dans la bande du méthane | ![File de revue](submission/images/10-review-queue.png) La file de sources à vérifier |
 | ![Système solaire](submission/images/04-solar-system-map.png) Le Système solaire vu par SPHEREx | ![Cérès](submission/images/05-solar-system-ceres.png) Cérès, poses lues en direct |
+| ![Voie lactée](submission/images/11-milky-way.png) La Voie lactée, avec la position du Soleil | ![Galaxies](submission/images/12-cosmic-web-galaxies.png) Les 43 463 galaxies autour de la Voie lactée |
 | ![Vue du ciel](submission/images/06-sky-view.png) La vue du ciel | ![Carte des naines](submission/images/09-map-of-nearby-dwarfs.png) La carte des naines proches |
 
 ## Ce que fait l'outil
