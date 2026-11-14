@@ -33,95 +33,73 @@ The same blink led to a result. By crossing WISE, which says where to look, with
 
 ## Project Details
 
-Images to insert are marked [image: file name]; the files are in `images/`.
+The headings follow the six questions of the form, in order. Images to insert are marked [image: file name]; the files are in `images/`.
 
-**Try it in one minute**
+**What does it do?**
 
-Open https://blinking-sky.vercel.app and click “Open the sky”.
+Blinking Sky lets anyone watch the sky change in real SPHEREx images, on three time scales: hours for the Solar System, months and years for our nearest neighbours, and no change at all for distant galaxies, which is the reference. It has three parts.
 
-1. Type “Ceres” in the search box. Six real exposures taken a few hours apart load from NASA's archive: the stars stay, Ceres moves.
-2. Open “WISE 0855−0714” under “Start here” and blink “Across dates”. The coldest known brown dwarf, 7 light-years away, shifts between May 2025, November 2025 and May 2026.
-3. Open any source under “Candidates · no publication found” and blink “Across colours”. The source is there at 4 µm and gone in the methane band.
-4. Click “Show me one nobody has checked” and judge a source yourself.
+1. A blink viewer. For any position, the visitor blinks between dates to see what moves, and between two colours (3.83–5.0 µm and the methane band at 3.15–3.50 µm) to see what the object is made of.
+2. A map with real distances: the Sun, the Earth, the planets and 7,083 asteroids and comets placed where they were on the day SPHEREx saw them; 15,739 ultracool dwarfs already typed by SPHEREx; 43,463 galaxies. Clicking any dot opens its real images.
+3. A review queue of 382 red, moving WISE sources that nobody has examined in SPHEREx. The visitor looks at one, says what they see, then sees the measurement.
+
+Try it in one minute at https://blinking-sky.vercel.app (“Open the sky”):
+
+- Type “Ceres” in the search box: six real exposures a few hours apart. The stars stay, Ceres moves.
+- Open “WISE 0855−0714” and blink “Across dates”: the coldest known brown dwarf, 7 light-years away, shifts between May 2025 and May 2026.
+- Open a source under “Candidates · no publication found” and blink “Across colours”: it is there at 4 µm and gone in the methane band.
 
 [image: 05-solar-system-ceres.png]
-
-**What it does**
-
-The challenge asks for a public tool that makes it easy to see how SPHEREx images change over time. Blinking Sky shows change on three time scales, with real images each time: hours for the Solar System, months and years for our nearest neighbours, and no change at all for distant galaxies, which is the reference. It has three parts.
-
-1. A blink viewer. For any position, the SPHEREx exposures are grouped by pass (about six months apart) and stacked on one fixed, north-up grid. The visitor blinks between dates to see motion, and between two colours (3.83–5.0 µm and the methane band at 3.15–3.50 µm) to see what the object is made of.
-2. A map with real distances. The Milky Way with the Sun at the origin: 15,739 ultracool dwarfs already typed by SPHEREx, 43,463 galaxies at their redshift distance, and the Solar System with the Sun, the Earth, the planets and 7,083 asteroids and comets placed where they were on the day SPHEREx saw them. Clicking any dot opens its real images.
-3. A review queue. 382 red, moving WISE sources that nobody has examined in SPHEREx. The visitor looks at one, says what they see, and then sees the measured methane index.
-
 [image: 07-brown-dwarf-wise0855-dates.png]
-[image: 04-solar-system-map.png]
 
-**How it works**
+**How does it work?**
 
-SPHEREx level-2 images are public in a cloud archive that accepts partial requests from a web page. For each exposure the tool asks for three small pieces: the header with the astrometric solution, the wavelength table, and the few image rows that contain the position. That is about 0.3 MB instead of a 65 MB file. An index of the 1.6 million images, cut into small sky tiles, tells the browser which exposures cover a position. Each window has its background removed and is resampled on a common grid; windows are averaged after rejecting single-exposure outliers. Nothing is moved or amplified, and missing pixels stay black.
+SPHEREx level-2 images are public in a cloud archive that accepts partial requests from a web page. For each exposure the browser asks for three small pieces: the header with the astrometric solution, the wavelength table, and the few image rows that contain the position. That is about 0.3 MB instead of a 65 MB file. An index of the 1.6 million images, cut into small sky tiles, tells the browser which exposures cover a position. Each window has its background removed and is put on one fixed, north-up grid; windows of the same pass (about six months apart) are averaged after rejecting single-exposure outliers. Nothing is moved or amplified, and missing pixels stay black.
 
-We checked the in-browser reader against a reference analysis in Python: pixel positions agree to a millionth of a pixel, and the methane index of a known dwarf comes out at 0.025 ± 0.003 in the browser against 0.033 ± 0.007 in the reference.
+To say what an object is, we use one simple test, the methane index: the flux at 3.15–3.50 µm divided by the flux at 3.83–4.20 µm. Below 0.30, with a signal-to-noise ratio of at least 5, we call it a methane dip. On controls, 19 of 21 confirmed cold dwarfs show the dip (the two others have a background star in the pixel), and none of 256 negative controls does. We checked the in-browser reader against a reference analysis in Python: pixel positions agree to a millionth of a pixel.
 
-**What we found**
+**What benefits does it have?**
 
-We use one simple test, the methane index: the flux at 3.15–3.50 µm divided by the flux at 3.83–4.20 µm. Below 0.30, with a signal-to-noise ratio of at least 5, we call it a methane dip.
-
-- On controls, 19 of 21 confirmed cold dwarfs show the dip. The two that do not have a background star in the SPHEREx pixel.
-- None of 256 negative controls (field stars, red sources with no motion, empty positions) shows it.
-- Applied to red, moving sources from CatWISE2020, the test leaves 48 sources consistent with a late T or Y dwarf. Three were already typed from a spectrum: the selection found them blindly, which checks the method. For 33 published candidates, SPHEREx adds spectral evidence. For 12, we found no publication.
-
-All 45 are candidates. None is confirmed by spectroscopy, and some of the 12 may already be known to other teams. The full table, with positions and measurements, is being deposited on Zenodo. [add the link once the deposit is made, or remove this sentence]
+- Anyone can look at real SPHEREx images within seconds, on any position, with no account and nothing to install.
+- It gives a result. Applied to red, moving sources from CatWISE2020, the methane test leaves 48 sources consistent with a late T or Y dwarf. Three were already typed from a spectrum: the selection found them blindly, which checks the method. For 33 published candidates, SPHEREx adds spectral evidence. For 12, we found no publication. All are candidates; none is confirmed by spectroscopy, and some of the 12 may already be known to other teams.
+- The candidate table gives observers a short list for follow-up spectroscopy. [It is being deposited on Zenodo: add the link, or remove this sentence.]
+- The site is static and reads NASA's archive directly, so it costs nothing to keep online.
 
 [image: 08-candidate-methane-band.png]
 
-**Why it is creative**
+**What is the intended impact?**
 
-- Blinking in colour. The blink comparator is a century old and is used on dates. We also blink two wavelengths, which turns a spectral feature into something anyone can see: the object vanishes.
-- No server. The whole pipeline (finding the exposures, reading them, aligning and stacking them, measuring the source) runs in the visitor's browser on NASA's public files.
-- One map for everything SPHEREx sees, at real distances, from an asteroid 3 au away to a galaxy 49 million light-years away.
-- Crossing data sets. SPHEREx alone does not say where to look, and WISE alone does not say what an object is. Together they do.
-
-**Benefits and intended impact**
-
-- Anyone can look at real SPHEREx images within seconds, on any position, with nothing to install.
-- The blink is the method of the citizen-science project Backyard Worlds: Planet 9, applied to a new mission. A volunteer who knows one will understand the other.
-- The review queue lets visitors examine real sources that nobody has looked at in SPHEREx.
-- The candidate table gives observers a short list for follow-up spectroscopy.
-- Because the site is static and reads NASA's archive directly, it costs nothing to keep online and will show new SPHEREx passes as they are released, once the image index is rebuilt.
+SPHEREx re-observes the whole sky every six months, and nobody can look at more than a billion sources alone. We want the public to do with SPHEREx what volunteers of Backyard Worlds: Planet 9 did with WISE: blink, notice, report. The review queue is the first step: 382 real sources that nobody has examined, open to anyone. Next, we want to collect the votes so that several people looking at the same source produce a shared answer, ask for spectra of the 12 candidates, and extend the search to the next SPHEREx data release.
 
 [image: 10-review-queue.png]
 
-**What we considered**
+**What tools, coding languages, hardware, or software did you use?**
+
+- Web tool: TypeScript, React, Vite and three.js (WebGL). Static hosting on Vercel.
+- Data preparation: Python with astropy and numpy.
+- Data: SPHEREx level-2 images from NASA/IPAC IRSA, CatWISE2020, and the other sources listed below.
+- Hardware: two laptops. No server and no paid computing.
+
+The methane analysis, the index of SPHEREx images and the lists of exposures for Solar System bodies were prepared by one team member in the days before the event. The web tool, its in-browser image reader, the maps, the review queue and the texts were made during the 48 hours.
+
+[One or two sentences on the use of AI tools, if the authors choose to state it here as well as in the SI field.]
+
+**How is your project creative?**
+
+- Blinking in colour. The blink comparator is a century old and is used on dates. We also blink two wavelengths, which turns a spectral feature into something anyone can see: the object vanishes.
+- No server. Finding the exposures, reading them, aligning and stacking them and measuring the source all happen in the visitor's browser, on NASA's public files.
+- One map for everything SPHEREx sees, at real distances, from an asteroid 3 au from the Sun to a galaxy 49 million light-years away.
+- Crossing data sets. SPHEREx alone does not say where to look, and WISE alone does not say what an object is. Together they do.
+
+[image: 04-solar-system-map.png]
+
+**What factors did your team consider?**
 
 - Honest images. The pictures are averages of real exposures. The round bodies drawn next to them are illustrations built from the measurements, and are labelled “not an image”.
 - Honest words. Every source is called a candidate. “No publication found” means absent from the catalogues and lists we searched, not “unknown”.
 - Privacy. Nothing a visitor does is sent anywhere; votes stay in their browser.
-- Access. No account, no download, and each object costs a few megabytes to load.
-
-**Limits**
-
-- SPHEREx pixels are 6.15″ wide. Only the fastest neighbours move visibly between two passes; for most candidates the evidence is the colour blink, and the motion comes from WISE.
-- The test is reliable to W2 ≈ 15.2 and works about one time in two down to W2 = 16.0.
-- It does not work in the Galactic plane, where sources are blended in the pixel.
-- The in-browser measurement is a quick look; it is less precise than the reference analysis.
-- Votes are not collected yet, so the queue does not produce a shared result.
-
-**Tools**
-
-TypeScript, React, Vite and three.js (WebGL) for the web tool; Python with astropy and numpy to prepare the tables; static hosting. The only live data source is NASA's archive.
-
-**What was done before and during the event**
-
-The methane analysis, the index of SPHEREx images and the lists of exposures for Solar System bodies were prepared by one team member in the days before the event. The web tool, its in-browser image reader, the maps, the review queue and the texts were made during the 48 hours. The project journal separates the two.
-
-**What comes next**
-
-- Collect the votes, so that several people looking at the same source produce a shared answer.
-- Ask for spectra of the 12 candidates.
-- Extend the search to the next SPHEREx data release.
-
-[One or two sentences on the use of AI tools, if the authors choose to state it here as well as in the SI field.]
+- Access. Each object costs a few megabytes to load, in English, with a guided introduction.
+- Limits, stated in the tool. SPHEREx pixels are 6.15″ wide, so only the fastest neighbours move visibly between two passes; for most candidates the evidence is the colour blink and the motion comes from WISE. The test is reliable to W2 ≈ 15.2, works about one time in two down to W2 = 16.0, and does not work in the Galactic plane. Votes are not collected yet.
 
 ---
 
