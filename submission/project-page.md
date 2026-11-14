@@ -29,7 +29,7 @@ The same blink led to a result. By crossing WISE, which says where to look, with
 
 https://blinking-sky.vercel.app
 
-Source code (the repository must be made public before this link is used): https://github.com/Paulhb7/blinking-sky
+Source code: https://github.com/Paulhb7/blinking-sky
 
 ---
 
@@ -105,6 +105,19 @@ The methane analysis, the index of SPHEREx images and the lists of exposures for
 ![The Solar System as SPHEREx saw it](images/04-solar-system-map.png)
 *The Solar System as SPHEREx saw it*
 
+
+**Three scales in one tool**
+
+The same gesture, click and blink, works at three scales of the Universe.
+
+- The Solar System. The Sun, the Earth and the planets on their orbits, with 7,083 asteroids and comets seen by SPHEREx. Here the sky changes in hours.
+- The Milky Way. Our neighbourhood of the galaxy, with the Sun at the origin: 15,739 dwarfs already typed by SPHEREx, the candidates of this work and the 382 unexamined sources. Here the sky changes in months and years.
+- The cosmic web. 43,463 galaxies at their measured redshift distance, out to hundreds of millions of light-years, drawing the filaments and voids of the large-scale structure. Here nothing moves, and each galaxy opens on its real SPHEREx image.
+
+The visitor zooms from one scale to the next without leaving the map.
+
+![NGC 4639, a galaxy 49 million light-years away, opened from the map](images/02-galaxy-ngc4639.png)
+*NGC 4639, a galaxy 49 million light-years away, opened from the map*
 
 **What factors did your team consider?**
 
