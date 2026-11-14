@@ -71,6 +71,9 @@ To say what an object is, we use one simple test, the methane index: the flux at
 - The candidate table gives observers a short list for follow-up spectroscopy. [It is being deposited on Zenodo: add the link, or remove this sentence.]
 - The site is static and reads NASA's archive directly, so it costs nothing to keep online.
 
+![The twelve candidates, each at 4 µm and in the methane band](images/13-twelve-candidates.png)
+*The twelve candidates, each at 4 µm and in the methane band*
+
 ![A candidate in the methane band, with its SPHEREx spectrum](images/08-candidate-methane-band.png)
 *A candidate in the methane band, with its SPHEREx spectrum*
 

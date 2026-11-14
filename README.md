@@ -6,6 +6,12 @@ L'interface est en anglais. Ce README et le journal sont en français.
 
 En ligne : https://blinking-sky.vercel.app
 
+## Les douze candidates
+
+![Douze candidates naines brunes froides](submission/images/13-twelve-candidates.png)
+
+Vraies images SPHEREx à 4 µm et dans la bande du méthane. Ce sont des candidates : aucune n'est confirmée par un spectre.
+
 ## Captures
 
 | | |
