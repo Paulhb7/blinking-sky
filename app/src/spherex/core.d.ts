@@ -1,0 +1,14 @@
+export const S3: string; export const NATIVE_PIXEL: number; export const GRID: { n: number; pixel: number };
+export const BANDS: Record<string, [number, number]>;
+export function stats(): { bytes: number; requests: number };
+export type Exposure = { key: string; mjd: number; detector: number; wave: number; bandwidth: number; x: number; y: number; skipped?: boolean; window?: Float32Array; flux: number; error: number; badFraction: number; sigma: number };
+export function readExposure(key: string, ra: number, dec: number, options?: { signal?: AbortSignal; want?: (wave: number) => boolean }): Promise<Exposure | null>;
+export function stackWindows(windows: Float32Array[]): Float32Array;
+export function stackNoise(image: Float32Array): number;
+type Band = { flux: number; error: number; n: number };
+export function bandFlux(points: { wave: number; flux: number; error: number; badFraction: number }[], lo: number, hi: number): Band;
+export function methaneIndex(points: { wave: number; flux: number; error: number; badFraction: number }[]): { R: number; eR: number; snr: number; ch4: Band; peak: Band; lw: Band };
+export function binSpectrum(points: { wave: number; flux: number; error: number; badFraction: number }[], perDex?: number): [number, number, number][];
+export function positionAt(source: { ra: number; dec: number; epoch?: number; pm?: [number, number] }, mjd: number): [number, number];
+export function keyOf(file: string, release?: string): string;
+export function pool<T, R>(items: T[], limit: number, task: (item: T) => Promise<R>, each?: (result: R | null, item: T) => void | Promise<void>): Promise<void>;

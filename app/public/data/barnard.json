@@ -1,0 +1,201 @@
+{
+  "schemaVersion": 1,
+  "target": "Barnard's Star",
+  "kind": "observed",
+  "status": "Exploratory motion demonstration; saturated core",
+  "acquiredDate": "2026-11-05",
+  "credit": "NASA/JPL-Caltech/SPHEREx · NASA/IPAC IRSA",
+  "acknowledgmentUrl": "https://irsa.ipac.caltech.edu/ack.html",
+  "documentationUrl": "https://caltech-ipac.github.io/irsa-tutorials/spherex-cutouts/",
+  "originalUnits": "MJy/sr",
+  "displayUnits": "8-bit grayscale with a shared asinh stretch; not quantitative photometry",
+  "displayTransform": {
+    "type": "asinh",
+    "linearWidth": 3,
+    "vmin": -2,
+    "vmax": 1300,
+    "background": "Median subtracted per frame"
+  },
+  "frame": {
+    "system": "ICRS TAN",
+    "centerRaDeg": 269.4465,
+    "centerDecDeg": 4.768,
+    "width": 240,
+    "height": 240,
+    "gridPixelArcsec": 2.4,
+    "nativePixelArcsec": 6.15,
+    "northUp": true,
+    "eastLeft": true,
+    "referencePixelZeroBased": [
+      120,
+      120
+    ]
+  },
+  "processing": [
+    "Bilinear WCS reprojection onto a fixed sky grid",
+    "Same intensity stretch at both epochs",
+    "Global translation from field stars only; target is not separately aligned",
+    "Missing pixels displayed black; no inpainting",
+    "Orange quality overlay represents the archived pixel flags",
+    "No synthetic source motion or motion amplification"
+  ],
+  "selection": "Two complete D3 cutouts with overlapping passbands near 1.9 micrometers, selected from the Barnard pilot. Not a complete archive sample.",
+  "qualityBadBits": [
+    0,
+    1,
+    2,
+    6,
+    7,
+    9,
+    10,
+    11,
+    15,
+    17,
+    19,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29
+  ],
+  "allowedSourceFlagBit": 21,
+  "registrationTranslationGridPx": [
+    0.05968599524324958,
+    -0.01916702224019673
+  ],
+  "controlsImagePixels": [
+    [
+      124.02,
+      76.62
+    ],
+    [
+      151.69,
+      73.64
+    ],
+    [
+      159.26,
+      173.58
+    ],
+    [
+      90.26,
+      212.69
+    ],
+    [
+      105.11,
+      210.69
+    ],
+    [
+      26.39,
+      191.16
+    ],
+    [
+      71.33,
+      84.65
+    ],
+    [
+      114.93,
+      60.93
+    ],
+    [
+      194.35,
+      98.89
+    ],
+    [
+      175.88,
+      204.9
+    ],
+    [
+      189.44,
+      44.36
+    ],
+    [
+      151.35,
+      61.8
+    ],
+    [
+      201.15,
+      197.79
+    ],
+    [
+      141.83,
+      197.49
+    ],
+    [
+      51.46,
+      153.4
+    ],
+    [
+      167.44,
+      138.57
+    ],
+    [
+      204.8,
+      145.15
+    ],
+    [
+      27.18,
+      79.37
+    ]
+  ],
+  "measurements": {
+    "method": "Elliptical Gaussian fits to unflagged wings on native pixels",
+    "northDisplacementArcsec": [
+      10.34,
+      10.58
+    ],
+    "rangeMeaning": "Fit-aperture sensitivity range, not a confidence interval",
+    "predictedNorthArcsec": 10.314299217602876,
+    "referenceStars": 18,
+    "referenceScatterArcsec": [
+      0.22806744304704316,
+      0.24059733662853183
+    ],
+    "eastMismatchArcsec": 0.8526219078945135,
+    "limitations": [
+      "Prediction uses geocentric geometric parallax; no spacecraft ephemeris or differential aberration correction.",
+      "Gaussian wings approximate the instrumental PSF; sensitivity spread is not a confidence interval.",
+      "Reference-star intrinsic proper motions have not been catalog-corrected.",
+      "Effective wavelengths differ between exposures; no flux-variability inference.",
+      "Registration is a translation only; no precision astrometric validation."
+    ]
+  },
+  "epochs": [
+    {
+      "image": "/data/spherex/barnard/2025-08-21.png",
+      "imageSha256": "8e1e0500f5c617d5a3685904d06d70784eeb0faeb73efe0656fe9886804e400f",
+      "maskedImage": "/data/spherex/barnard/2025-08-21-quality.png",
+      "maskedImageSha256": "22660b403c537baad9038f88497754ce90dd09b962d0658e26bc6a34caa570a2",
+      "date": "2025-08-21",
+      "observedUtc": "2025-08-21T15:25:41.419Z",
+      "wavelengthUm": 1.916680866516251,
+      "bandwidthUm": 0.04752342678020493,
+      "detector": "D3",
+      "release": "QR2",
+      "exposureSeconds": 113.5826,
+      "observationId": "2025W34_2B_0030_3",
+      "sourceUrl": "https://irsa.ipac.caltech.edu/ibe/data/spherex/qr2/level2/2025W34_2B/l2b-v20-2025-269/3/level2_2025W34_2B_0030_3D3_spx_l2b-v20-2025-269.fits",
+      "cutoutUrl": "https://irsa.ipac.caltech.edu/ibe/data/spherex/qr2/level2/2025W34_2B/l2b-v20-2025-269/3/level2_2025W34_2B_0030_3D3_spx_l2b-v20-2025-269.fits?center=269.4465,4.7680d&size=0.16",
+      "sourceSha256": "3278f5a67abadc5b60588a4bb538b9943734ef43318b7eb997a7ebdce0781e16",
+      "acquiredUtc": "2026-11-05T16:14:41.798595+00:00"
+    },
+    {
+      "image": "/data/spherex/barnard/2026-08-18.png",
+      "imageSha256": "ea62175c4c3a8e0c467f28d637dfc14cf4e7ab2bb4290c8dee84d94edaedc751",
+      "maskedImage": "/data/spherex/barnard/2026-08-18-quality.png",
+      "maskedImageSha256": "fdcd6ee9bfb6dbf74e3191fef07ea503bf94be875997316e91401f72430ae32a",
+      "date": "2026-08-18",
+      "observedUtc": "2026-08-18T14:21:44.352Z",
+      "wavelengthUm": 1.9380278714415466,
+      "bandwidthUm": 0.04736814779511809,
+      "detector": "D3",
+      "release": "QR3",
+      "exposureSeconds": 113.5826,
+      "observationId": "2026W34_1A_0308_3",
+      "sourceUrl": "https://irsa.ipac.caltech.edu/ibe/data/spherex/qr3/level2/2026W34_1A/l2b-v27-2026-243/3/level2_2026W34_1A_0308_3D3_spx_l2b-v27-2026-243.fits",
+      "cutoutUrl": "https://irsa.ipac.caltech.edu/ibe/data/spherex/qr3/level2/2026W34_1A/l2b-v27-2026-243/3/level2_2026W34_1A_0308_3D3_spx_l2b-v27-2026-243.fits?center=269.4465,4.7680d&size=0.16",
+      "sourceSha256": "db45d456dcfa973c796ea995ce749f59565859415c1eb5d1ae07b02c3852c2bf",
+      "acquiredUtc": "2026-11-05T16:17:03.936852+00:00"
+    }
+  ]
+}

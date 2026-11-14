@@ -1,0 +1,1 @@
+{"source": "HYG Database v4.4 (astronexus, codeberg.org/astronexus/hyg), CC BY-SA 4.0", "license": "CC BY-SA 4.0", "count": 58719, "record": "x,y,z (equatorial unit vector, ICRS), apparent V magnitude, B-V; float32 little-endian, brightest first", "magLimit": 8.5}
