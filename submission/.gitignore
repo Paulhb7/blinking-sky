@@ -1,0 +1,10 @@
+video/footage/
+video/old/
+video/music/
+video/film/.hyperframes/
+video/film/.thumbnails/
+video/film/node_modules/
+video/film/assets/*.mp4
+video/film/assets/*.m4a
+video/film/CLAUDE.md
+video/film/AGENTS.md

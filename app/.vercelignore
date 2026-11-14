@@ -1,0 +1,5 @@
+dist
+node_modules
+scan_queue.json
+scan_queue.mjs
+validate.mjs

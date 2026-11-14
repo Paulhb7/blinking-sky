@@ -311,6 +311,8 @@ export default function App() {
     hunt: () => { setGuide(null); nextUnchecked(); },
     replay: (id) => { setGuide(null); const t = catalog?.targets.find((v) => v.id === id); if (t) replay(t); },
   };
+  // Development only: lets a test browser drive the tool like the talk does.
+  if (import.meta.env.DEV) (window as unknown as { __direct?: Director }).__direct = direct;
   const checked = queue.filter((q) => votes[q.id]).length;
   const found = queue.filter((q) => { const v = votes[q.id]; return v?.vote === "fades" && v.R !== undefined && v.R !== null && v.R < 0.3 && (v.snr ?? 0) >= 5; }).length;
   const candidateCount = (catalog?.targets.filter((t) => t.group === "unpublished").length ?? 12);
