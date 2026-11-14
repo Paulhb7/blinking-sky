@@ -12,6 +12,7 @@ L'interface est en anglais. Ce README et le journal sont en français.
 - **En direct** : pour une source de la file ou une position quelconque, le navigateur trouve les expositions qui couvrent la position, lit une petite fenêtre de chacune dans le bucket public de la NASA et les empile sous les yeux de l'utilisateur (environ 170 expositions, 50 Mo, une minute).
 - **Un vote** : « Fades in methane », « Stays the same », « Two sources », « Artefact », « Nothing there ». Les votes restent dans le navigateur.
 - **Une fiche candidate** imprimable, et une vue 3D de l'objet dessinée d'après ses mesures (étiquetée comme illustration).
+- **Une page d'accueil** : la Voie lactée vue de l'extérieur (modèle schématique repris de Project Atlas : barre, quatre bras, éperon d'Orion), avec la position du Soleil. « Open the sky » plonge vers le Soleil et ouvre le ciel.
 - **Une présentation** intégrée (touche P).
 
 ## Lancer

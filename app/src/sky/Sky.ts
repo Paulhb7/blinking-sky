@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { MilkyWay } from "./milkyway";
 import { Portrait, type PortraitLook } from "./portrait";
 
 /** The night sky of Blinking Sky: the real bright stars, an equatorial grid, markers, and archived frames placed where
@@ -85,8 +86,11 @@ export class Sky {
   private last = performance.now();
   private drag: { x: number; y: number; moved: number } | null = null;
   private disposed = false;
-  /** Slow turn of the sky, for the landing page. */
-  drift = false;
+  /** The landing page shows our galaxy from outside; entering the tool dives to the Sun and opens the night sky. */
+  private galaxy: MilkyWay | null = null;
+  private mode: "galaxy" | "sky" = "sky";
+  private diving = false;
+  private sunLabel: HTMLDivElement;
   onPick: (id: string) => void = () => {};
   onSkyClick: (ra: number, dec: number) => void = () => {};
   onMove: (ra: number, dec: number, fov: number) => void = () => {};
@@ -117,6 +121,7 @@ export class Sky {
     this.scene.add(this.frame, this.outline);
 
     this.overlay = document.createElement("div"); this.overlay.className = "sky-overlay"; host.appendChild(this.overlay);
+    this.sunLabel = document.createElement("div"); this.sunLabel.className = "galaxy-sun"; this.sunLabel.innerHTML = "<i></i><span>You are here</span>"; this.sunLabel.style.display = "none"; host.appendChild(this.sunLabel);
     this.frameLabel = this.tag("sky-frame-label"); this.portraitLabel = this.tag("sky-portrait-label"); this.pixelBox = this.tag("sky-pixel");
 
     this.canvas.addEventListener("pointerdown", this.down); window.addEventListener("pointermove", this.move); window.addEventListener("pointerup", this.up);
@@ -188,6 +193,12 @@ export class Sky {
   wide() { this.flight = { from: direction(this.look.ra, this.look.dec), to: direction(this.look.ra, this.look.dec), fov0: this.look.fov, fov1: WIDE_FOV, t: 0, duration: 1.4 }; }
   get view() { return { ...this.look }; }
 
+  /** Landing page on: the Milky Way model. Off: dive to the Sun, then the night sky. */
+  setHome(on: boolean) {
+    if (on) { this.galaxy ??= new MilkyWay(); this.galaxy.dive = 0; this.diving = false; this.mode = "galaxy"; this.canvas.style.opacity = "1"; }
+    else if (this.mode === "galaxy") this.diving = true;
+  }
+
   private resize() {
     const w = this.host.clientWidth, h = this.host.clientHeight;
     if (!w || !h) return;
@@ -236,7 +247,19 @@ export class Sky {
       this.look.fov = Math.exp(Math.log(f.fov0) + (Math.log(f.fov1) - Math.log(f.fov0)) * zoom);
       if (f.t >= 1) this.flight = null;
     }
-    if (this.drift && !this.flight && !this.drag) this.look.ra = (this.look.ra + dt * 0.9) % 360;
+    if (this.mode === "galaxy" && this.galaxy) {
+      const g = this.galaxy;
+      if (this.diving) { g.dive = Math.min(1, g.dive + dt / 1.7); if (g.dive > 0.82) this.canvas.style.opacity = "0"; }
+      g.update(dt, w, h);
+      this.renderer.setViewport(0, 0, w, h); this.renderer.setScissorTest(false); this.renderer.clear();
+      this.renderer.render(g.scene, g.camera);
+      const p = g.sunWorld().project(g.camera), show = !this.diving && p.z < 1;
+      this.sunLabel.style.display = show ? "flex" : "none";
+      if (show) this.sunLabel.style.transform = `translate(${(p.x + 1) / 2 * w}px, ${(1 - p.y) / 2 * h}px)`;
+      if (g.dive >= 1) { this.mode = "sky"; this.diving = false; this.sunLabel.style.display = "none"; this.canvas.style.opacity = "1"; }
+      this.raf = requestAnimationFrame(this.tick);
+      return;
+    }
     // At telescope zoom the frame moves left of the free area and the portrait takes the right.
     const tele = THREE.MathUtils.smoothstep(Math.log(0.6 / this.look.fov), 0, Math.log(0.6 / 0.2));
     const hasPortrait = this.portrait.active && this.frameSpec !== null;

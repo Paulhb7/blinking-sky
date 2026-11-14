@@ -110,7 +110,7 @@ export default function App() {
 
   useEffect(() => { if (sky.current) { sky.current.onPick = pick; } }, [pick]);
   // Home: the sky drifts, wide. Entering it flies to the first field.
-  useEffect(() => { if (sky.current) sky.current.drift = screen === "home"; }, [screen]);
+  useEffect(() => { sky.current?.setHome(screen === "home"); }, [screen]);
   const enter = useCallback((then?: () => void) => { setScreen("sky"); setPresenting(false); if (then) then(); else if (!selected) choose("J085510.83-071442.5"); }, [selected, choose]);
   useEffect(() => { if (catalog && !selected && screen === "sky") choose("J085510.83-071442.5"); }, [catalog, selected, screen, choose]);
   useEffect(() => {
