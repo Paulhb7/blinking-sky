@@ -1,6 +1,6 @@
 import * as THREE from "three";
 
-/** The Milky Way of the landing page: the structural model of Project Atlas (bar, four arms, Orion spur, bulge and
+/** The shape of the Milky Way: the structural model of Project Atlas (bar, four arms, Orion spur, bulge and
  * disk), sampled as stars and gas clouds. A schematic of our galaxy seen from outside, not a star-by-star map.
  * Scene units are kiloparsecs; y is the north galactic pole; the Sun sits at (-8.2, 0.02, 0). */
 
@@ -49,59 +49,34 @@ const VERT = /* glsl */ `
     vec4 mv = modelViewMatrix * vec4(position, 1.0);
     gl_Position = projectionMatrix * mv;
     float px = uSize * aTint * uPx / max(0.01, -mv.z);
-    gl_PointSize = max(1.4, px);
-    vFade = min(1.0, px / 1.4);
+    gl_PointSize = clamp(px, 1.4, 56.0);
+    // The model stands for stars too far to be measured: it fades out where the real stars take over.
+    vFade = smoothstep(0.5, 3.0, -mv.z);
     vTint = aTint;
   }`;
 const STAR_FRAG = /* glsl */ `
-  uniform vec3 uDense, uSparse; uniform float uBright, uFade; varying float vTint;
-  void main() { float r = length(gl_PointCoord - 0.5) * 2.0; float a = smoothstep(1.0, 0.0, r); gl_FragColor = vec4(mix(uDense, uSparse, vTint) * a * a * uBright * uFade, 1.0); }`;
+  uniform vec3 uDense, uSparse; uniform float uBright; varying float vTint; varying float vFade;
+  void main() { float r = length(gl_PointCoord - 0.5) * 2.0; float a = smoothstep(1.0, 0.0, r); gl_FragColor = vec4(mix(uDense, uSparse, vTint) * a * a * uBright * vFade, 1.0); }`;
 const STAR_VERT = VERT.replace("uSize * aTint", "uSize");
 const CLOUD_FRAG = /* glsl */ `
-  uniform vec3 uTint; uniform float uOpacity, uFade;
-  void main() { float r = length(gl_PointCoord - 0.5) * 2.0; float a = smoothstep(1.0, 0.0, r); gl_FragColor = vec4(uTint * a * uOpacity * uFade, 1.0); }`;
+  uniform vec3 uTint; uniform float uOpacity; varying float vFade;
+  void main() { float r = length(gl_PointCoord - 0.5) * 2.0; float a = smoothstep(1.0, 0.0, r); gl_FragColor = vec4(uTint * a * uOpacity * vFade, 1.0); }`;
 
-export class MilkyWay {
-  readonly scene = new THREE.Scene();
-  readonly camera = new THREE.PerspectiveCamera(38, 1, 0.01, 400);
-  private disk = new THREE.Group();
-  private starUniforms = { uSize: { value: 0.085 }, uPx: { value: 800 }, uDense: { value: new THREE.Color("#2885ff") }, uSparse: { value: new THREE.Color("#ffa27a") }, uBright: { value: 0.3 }, uFade: { value: 1 } };
-  private cloudUniforms = { uSize: { value: 2.2 }, uPx: { value: 800 }, uTint: { value: new THREE.Color("#ffd0d6") }, uOpacity: { value: 0.026 }, uFade: { value: 1 } };
-  private sun = new THREE.Vector3(-MILKY_WAY.r0, MILKY_WAY.z0, 0);
-  private home = { position: new THREE.Vector3(9, 13, 25), target: new THREE.Vector3(5.5, 0, 0) };
-  /** 0 on the landing page, 1 once the camera has reached the Sun. */
-  dive = 0;
+/** Position of the Galactic centre when the Sun is the origin. */
+export const GALACTIC_CENTRE = new THREE.Vector3(MILKY_WAY.r0, -MILKY_WAY.z0, 0);
 
-  constructor(starCount = 280000, cloudCount = 3600) {
-    const data = sample(starCount, cloudCount);
-    const stars = new THREE.BufferGeometry();
-    stars.setAttribute("position", new THREE.BufferAttribute(data.stars, 3)); stars.setAttribute("aTint", new THREE.BufferAttribute(data.tint, 1));
-    const starPoints = new THREE.Points(stars, new THREE.ShaderMaterial({ vertexShader: STAR_VERT, fragmentShader: STAR_FRAG, uniforms: this.starUniforms, blending: THREE.AdditiveBlending, depthWrite: false, depthTest: false, transparent: true }));
-    const clouds = new THREE.BufferGeometry();
-    clouds.setAttribute("position", new THREE.BufferAttribute(data.clouds, 3)); clouds.setAttribute("aTint", new THREE.BufferAttribute(data.size, 1));
-    const cloudPoints = new THREE.Points(clouds, new THREE.ShaderMaterial({ vertexShader: VERT, fragmentShader: CLOUD_FRAG, uniforms: this.cloudUniforms, blending: THREE.AdditiveBlending, depthWrite: false, depthTest: false, transparent: true }));
-    starPoints.frustumCulled = cloudPoints.frustumCulled = false;
-    this.disk.add(cloudPoints, starPoints); this.scene.add(this.disk);
-    this.disk.rotation.y = 2.6; // the Sun starts on the near right, clear of the text
-    this.scene.background = new THREE.Color("#04070d");
-  }
-
-  /** World position of the Sun in the turning disk. */
-  sunWorld() { return this.sun.clone().applyMatrix4(this.disk.matrixWorld); }
-
-  update(dt: number, width: number, height: number) {
-    // The disk turns toward +phi (clockwise seen from the north pole), far faster than the real 230 million years.
-    this.disk.rotation.y -= dt * 0.03; this.disk.updateMatrixWorld();
-    const e = this.dive * this.dive * (3 - 2 * this.dive), sun = this.sunWorld();
-    this.camera.aspect = width / height;
-    // On wide screens the galaxy sits to the right of the text.
-    const shift = width > 900 ? -width * 0.2 * (1 - e) : 0;
-    this.camera.setViewOffset(width, height, shift, 0, width, height);
-    this.camera.position.lerpVectors(this.home.position, sun.clone().add(new THREE.Vector3(0.05, 0.12, 0.3)), e);
-    this.camera.lookAt(new THREE.Vector3().lerpVectors(this.home.target, sun, e));
-    this.camera.updateProjectionMatrix();
-    const px = height / (2 * Math.tan(this.camera.fov * Math.PI / 360));
-    this.starUniforms.uPx.value = this.cloudUniforms.uPx.value = px;
-    this.starUniforms.uFade.value = this.cloudUniforms.uFade.value = 1 - 0.85 * Math.max(0, (e - 0.7) / 0.3);
-  }
+/** The model as two point clouds, placed so that the Sun is at the origin. `update` takes pixels per unit angle. */
+export function milkyWayDisk(starCount = 300000, cloudCount = 3600) {
+  const data = sample(starCount, cloudCount);
+  const starUniforms = { uSize: { value: 0.085 }, uPx: { value: 800 }, uDense: { value: new THREE.Color("#2885ff") }, uSparse: { value: new THREE.Color("#ffa27a") }, uBright: { value: 0.3 } };
+  const cloudUniforms = { uSize: { value: 2.2 }, uPx: { value: 800 }, uTint: { value: new THREE.Color("#ffd0d6") }, uOpacity: { value: 0.026 } };
+  const stars = new THREE.BufferGeometry();
+  stars.setAttribute("position", new THREE.BufferAttribute(data.stars, 3)); stars.setAttribute("aTint", new THREE.BufferAttribute(data.tint, 1));
+  const starPoints = new THREE.Points(stars, new THREE.ShaderMaterial({ vertexShader: STAR_VERT, fragmentShader: STAR_FRAG, uniforms: starUniforms, blending: THREE.AdditiveBlending, depthWrite: false, depthTest: false, transparent: true }));
+  const clouds = new THREE.BufferGeometry();
+  clouds.setAttribute("position", new THREE.BufferAttribute(data.clouds, 3)); clouds.setAttribute("aTint", new THREE.BufferAttribute(data.size, 1));
+  const cloudPoints = new THREE.Points(clouds, new THREE.ShaderMaterial({ vertexShader: VERT, fragmentShader: CLOUD_FRAG, uniforms: cloudUniforms, blending: THREE.AdditiveBlending, depthWrite: false, depthTest: false, transparent: true }));
+  starPoints.frustumCulled = cloudPoints.frustumCulled = false;
+  const group = new THREE.Group(); group.add(cloudPoints, starPoints); group.position.copy(GALACTIC_CENTRE);
+  return { group, update: (px: number, brightness = 1) => { starUniforms.uPx.value = cloudUniforms.uPx.value = px; starUniforms.uBright.value = 0.3 * brightness; cloudUniforms.uOpacity.value = 0.026 * brightness * brightness; } };
 }

@@ -10,7 +10,7 @@ export type PortraitLook = { kind: "dwarf" | "star" | "unknown"; temperature: nu
 const VERT = /* glsl */ `varying vec3 vN; varying vec3 vP; void main() { vN = normalize(normalMatrix * normal); vP = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`;
 const FRAG = /* glsl */ `
   varying vec3 vN; varying vec3 vP;
-  uniform float uTime, uTemp, uMethane, uBright, uSeed, uStar, uFade;
+  uniform float uTime, uTemp, uMethane, uBright, uSeed, uStar, uFade, uUnknown;
   float hash(vec3 p) { return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453); }
   float noise(vec3 p) { vec3 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
     return mix(mix(mix(hash(i), hash(i + vec3(1,0,0)), f.x), mix(hash(i + vec3(0,1,0)), hash(i + vec3(1,1,0)), f.x), f.y),
@@ -41,8 +41,13 @@ const FRAG = /* glsl */ `
       colour *= 0.35 + 0.85 * pow(mu, 0.75);
       colour += base * 0.22 * t;   // self-glow of the warmer dwarfs
     }
+    if (uUnknown > 0.5) {
+      // Nothing measured says what this is: a plain grey body, on purpose.
+      colour = vec3(0.34, 0.38, 0.45) * (0.8 + 0.35 * fbm(p * 3.0)) * (0.25 + 0.8 * pow(mu, 0.8));
+    }
     float rim = pow(1.0 - mu, 3.0);
-    colour += (uStar > 0.5 ? vec3(1.0, 0.5, 0.25) : mix(vec3(0.45, 0.3, 0.75), vec3(0.9, 0.45, 0.5), clamp((uTemp - 350.0) / 950.0, 0.0, 1.0))) * rim * 0.55;
+    vec3 rimTint = uUnknown > 0.5 ? vec3(0.4, 0.5, 0.65) : uStar > 0.5 ? vec3(1.0, 0.5, 0.25) : mix(vec3(0.45, 0.3, 0.75), vec3(0.9, 0.45, 0.5), clamp((uTemp - 350.0) / 950.0, 0.0, 1.0));
+    colour += rimTint * rim * 0.55;
     gl_FragColor = vec4(colour * (0.35 + 0.65 * uBright), uFade);
   }`;
 const GLOW_FRAG = /* glsl */ `
@@ -55,7 +60,7 @@ export class Portrait {
   private camera = new THREE.PerspectiveCamera(30, 1, 0.1, 100);
   private ball: THREE.Mesh;
   private glow: THREE.Mesh;
-  private uniforms = { uTime: { value: 0 }, uTemp: { value: 800 }, uMethane: { value: 0.8 }, uBright: { value: 1 }, uSeed: { value: 0 }, uStar: { value: 0 }, uFade: { value: 1 } };
+  private uniforms = { uTime: { value: 0 }, uTemp: { value: 800 }, uMethane: { value: 0.8 }, uBright: { value: 1 }, uSeed: { value: 0 }, uStar: { value: 0 }, uFade: { value: 1 }, uUnknown: { value: 0 } };
   private glowUniforms = { uColour: { value: new THREE.Color(0.6, 0.3, 0.5) }, uPower: { value: 0.5 }, uFade: { value: 1 } };
   private target: PortraitLook | null = null;
   private bright = 1;
@@ -71,12 +76,12 @@ export class Portrait {
   }
 
   set(look: PortraitLook | null) {
-    this.target = look; this.active = Boolean(look && look.kind !== "unknown");
+    this.target = look; this.active = Boolean(look);
     if (!look) return;
-    this.uniforms.uTemp.value = look.temperature; this.uniforms.uMethane.value = look.methane; this.uniforms.uSeed.value = look.seed; this.uniforms.uStar.value = look.kind === "star" ? 1 : 0;
+    this.uniforms.uTemp.value = look.temperature; this.uniforms.uMethane.value = look.methane; this.uniforms.uSeed.value = look.seed; this.uniforms.uStar.value = look.kind === "star" ? 1 : 0; this.uniforms.uUnknown.value = look.kind === "unknown" ? 1 : 0;
     const t = Math.max(0, Math.min(1, (look.temperature - 350) / 950));
-    if (look.kind === "star") this.glowUniforms.uColour.value.setRGB(1.0, 0.45, 0.2); else this.glowUniforms.uColour.value.setRGB(0.4 + 0.5 * t, 0.25 + 0.1 * t, 0.6 - 0.2 * t);
-    this.glowUniforms.uPower.value = look.kind === "star" ? 0.9 : 0.25 + 0.4 * t;
+    if (look.kind === "unknown") this.glowUniforms.uColour.value.setRGB(0.3, 0.38, 0.5); else if (look.kind === "star") this.glowUniforms.uColour.value.setRGB(1.0, 0.45, 0.2); else this.glowUniforms.uColour.value.setRGB(0.4 + 0.5 * t, 0.25 + 0.1 * t, 0.6 - 0.2 * t);
+    this.glowUniforms.uPower.value = look.kind === "unknown" ? 0.18 : look.kind === "star" ? 0.9 : 0.25 + 0.4 * t;
   }
 
   render(renderer: THREE.WebGLRenderer, x: number, y: number, size: number, dt: number, fade: number) {
@@ -93,9 +98,10 @@ export class Portrait {
 
 /** Effective temperature (K) for a fitted spectral type, a rounded reading of published type–temperature relations. */
 export function temperatureOf(type: string | null | undefined): number {
-  const m = /([LTY])\s*(\d+(?:\.\d+)?)/.exec(type ?? "");
+  const m = /([MLTY])\s*(\d+(?:\.\d+)?)/.exec(type ?? "");
   if (!m) return 800;
   const n = Number(m[2]);
+  if (m[1] === "M") return 3800 - n * 150;
   if (m[1] === "L") return 2200 - n * 90;
   if (m[1] === "T") return n <= 4 ? 1300 - n * 25 : 1200 - (n - 4) * 150;
   return Math.max(300, 450 - n * 60);

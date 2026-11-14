@@ -5,7 +5,7 @@ import { dayLabel, type SpxFrame, type SpxGroup, type SpxTarget } from "./data";
 /** Builds a field in this browser: finds the public SPHEREx exposures that cover a position, reads a small window of
  * each from NASA's bucket, and stacks them by season and by colour while they arrive. */
 
-export type LiveInput = { id: string; name: string; ra: number; dec: number; group: SpxGroup; epoch?: number; pm?: [number, number]; pmTotal?: number; pmSigma?: number; W1?: number; W2?: number; blurb: string; published: string };
+export type LiveInput = { id: string; name: string; ra: number; dec: number; group: SpxGroup; epoch?: number; pm?: [number, number]; pmTotal?: number; pmSigma?: number; W1?: number; W2?: number; blurb: string; published: string; /** spectral type already published for this object */ knownType?: string };
 type Point = { wave: number; flux: number; error: number; badFraction: number; mjd: number; detector: number };
 const ERROR_SCALE = 1.6; // stacked errors are underestimated by about this factor (measured on empty positions in the earlier analysis)
 const date = (mjd: number) => new Date((mjd - 40587) * 86400000).toISOString().slice(0, 10);
@@ -58,7 +58,7 @@ export function startLive(input: LiveInput, onUpdate: (target: SpxTarget) => voi
       dwarf: {
         W1: input.W1 ?? null, W2: input.W2 ?? null, snr: measured ? m.snr : NaN, R: hasIndex ? m.R : NaN, eR: hasIndex ? m.eR : NaN,
         dip: hasIndex && m.R < 0.3 ? "firm" : hasIndex && m.R - m.eR < 0.3 ? "likely" : "none",
-        type: null, typeUnc: null, chi2: null, published: input.published, decision: "", images: points.length, dates: mjds.length ? [Math.min(...mjds), Math.max(...mjds)] : [0, 0],
+        type: null, typeUnc: null, chi2: null, knownType: input.knownType, published: input.published, decision: "", images: points.length, dates: mjds.length ? [Math.min(...mjds), Math.max(...mjds)] : [0, 0],
         bands: { CH4: band(m.ch4), PEAK: band(m.peak), LW: band(m.lw) }, spectrum: binSpectrum(scaled, 25), template: null, quick: true,
       },
       live: { done, total, megabytes: (stats().bytes - bytes0) / 1e6, finished, error: error || undefined, pmSigma: input.pmSigma },
@@ -104,4 +104,25 @@ export function startLive(input: LiveInput, onUpdate: (target: SpxTarget) => voi
     /** Also read the short-wavelength detectors (0.75–2.4 µm) to complete the spectrum. */
     more: async () => { if (fullSpectrum) return; fullSpectrum = true; if (finished && rest.length) { finished = false; await read(rest); finished = true; emit(true); } },
   };
+}
+
+/** A fast first look at a position: a handful of 3.8–5 µm exposures spread over the dates, stacked. About 2 MB. */
+const looks = new Map<string, Promise<{ image: string; exposures: number } | null>>();
+export function quickLook(ra: number, dec: number, signal?: AbortSignal) {
+  const key = `${ra.toFixed(4)},${dec.toFixed(4)}`;
+  const cached = looks.get(key);
+  if (cached) return cached;
+  const run = (async () => {
+    const images = (await imagesAt(ra, dec, `${import.meta.env.BASE_URL}index`.replace(/\/\//g, "/"))).filter((i) => i.detector >= 5);
+    if (!images.length) return null;
+    const want = 8, step = Math.max(1, Math.floor(images.length / want)), pick = images.filter((_, i) => i % step === 0).slice(0, want), windows: Float32Array[] = [];
+    await pool(pick, 8, (item) => readExposure(item.key, ra, dec, { signal }), (r) => { if (r?.window && r.wave >= BANDS.LW[0]) windows.push(r.window); });
+    if (signal?.aborted || windows.length < 3) return null;
+    const all = stackWindows(windows), sigma = stackNoise(all) || 1e-3, c = (GRID.n - 1) / 2;
+    let peak = 0; for (let r = c - 3; r <= c + 3; r++) for (let q = c - 3; q <= c + 3; q++) { const v = all[r * GRID.n + q]; if (Number.isFinite(v)) peak = Math.max(peak, v); }
+    return { image: render(all, -2 * sigma, Math.max(peak * 1.1, 12 * sigma)), exposures: windows.length };
+  })().catch(() => null);
+  looks.set(key, run);
+  run.then((result) => { if (!result) looks.delete(key); });   // an aborted or failed look can be tried again
+  return run;
 }

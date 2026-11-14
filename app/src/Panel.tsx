@@ -134,7 +134,7 @@ export default function SpherexPanel({ target, catalog, view, ready, error, vote
   const frames = target.frames.map((f, index) => ({ f, index })).filter(({ f }) => f.kind === view.kind);
   const current = target.frames[view.frame];
   const shift = expectedShift(target);
-  const [chip, chipClass] = CHIP[target.group];
+  const [chip, chipClass] = target.id.startsWith("spx-") ? ["Published SPHEREx dwarf", "known"] : CHIP[target.group];
   return (
     <aside className="spx-panel" aria-label={`SPHEREx observations of ${target.name}`}>
       <header className="spx-head">

@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { MilkyWay } from "./milkyway";
+import { Galaxy, GALACTIC_CENTRE, type GalaxyObject } from "./galaxy";
 import { Portrait, type PortraitLook } from "./portrait";
 
 /** The night sky of Blinking Sky: the real bright stars, an equatorial grid, markers, and archived frames placed where
@@ -86,11 +86,19 @@ export class Sky {
   private last = performance.now();
   private drag: { x: number; y: number; moved: number } | null = null;
   private disposed = false;
-  /** The landing page shows our galaxy from outside; entering the tool dives to the Sun and opens the night sky. */
-  private galaxy: MilkyWay | null = null;
-  private mode: "galaxy" | "sky" = "sky";
-  private diving = false;
-  private sunLabel: HTMLDivElement;
+  /** The map: the Milky Way with the Sun at the origin. The night sky is what you see once you have reached an object. */
+  private galaxy = new Galaxy();
+  private mode: "galaxy" | "sky" = "galaxy";
+  onLevel: (level: "galaxy" | "sky") => void = () => {};
+  /** True while the camera is on its way to an object: leaving the landing page must not redirect it to the Sun. */
+  private bound = false;
+  private stage!: HTMLDivElement;
+  private stagePortrait!: HTMLDivElement;
+  private staged = false;
+  /** Pointer over something in the galaxy: a published dwarf, one of the listed objects, or nothing. */
+  onHover: (what: ({ kind: "dwarf" } & NonNullable<ReturnType<Galaxy["dwarfAt"]>>) | { kind: "object"; id: string } | null, x: number, y: number) => void = () => {};
+  /** Where the next flight should end when the target is not one of the listed objects (a clicked dwarf). */
+  destination: THREE.Vector3 | null = null;
   onPick: (id: string) => void = () => {};
   onSkyClick: (ra: number, dec: number) => void = () => {};
   onMove: (ra: number, dec: number, fov: number) => void = () => {};
@@ -121,7 +129,14 @@ export class Sky {
     this.scene.add(this.frame, this.outline);
 
     this.overlay = document.createElement("div"); this.overlay.className = "sky-overlay"; host.appendChild(this.overlay);
-    this.sunLabel = document.createElement("div"); this.sunLabel.className = "galaxy-sun"; this.sunLabel.innerHTML = "<i></i><span>You are here</span>"; this.sunLabel.style.display = "none"; host.appendChild(this.sunLabel);
+    host.appendChild(this.galaxy.overlay); this.galaxy.onPick = (id) => this.onPick(id);
+    this.galaxy.onHover = (id, x, y) => this.onHover(id ? { kind: "object", id } : null, x, y);
+    // In the galaxy, the selected object's picture and its 3D view are shown side by side once the camera has arrived.
+    this.stage = document.createElement("div"); this.stage.className = "sky-stage"; this.stage.style.display = "none";
+    this.stage.innerHTML = `<div class="sky-stage-label"></div><img alt="" /><div class="sky-stage-wait">Reading exposures from NASA&rsquo;s archive…</div><div class="sky-stage-foot">Telescope image · north up, east left · 125″ across</div>`;
+    this.stagePortrait = document.createElement("div"); this.stagePortrait.className = "sky-portrait-label"; this.stagePortrait.style.display = "none";
+    host.append(this.stage, this.stagePortrait);
+    this.overlay.style.display = "none";
     this.frameLabel = this.tag("sky-frame-label"); this.portraitLabel = this.tag("sky-portrait-label"); this.pixelBox = this.tag("sky-pixel");
 
     this.canvas.addEventListener("pointerdown", this.down); window.addEventListener("pointermove", this.move); window.addEventListener("pointerup", this.up);
@@ -187,17 +202,55 @@ export class Sky {
   setFrameOpacity(v: number) { (this.frame.material as THREE.MeshBasicMaterial).opacity = v; }
 
   flyTo(ra: number, dec: number, fov = TELESCOPE_FOV, seconds = 2.4) {
+    if (this.mode === "galaxy") {
+      // Travel through the galaxy to the object and stop on the Sun's side of it: its picture and 3D view appear there.
+      const dir = this.galaxy.direction(ra, dec), at = this.galaxy.positionOf(this.selected) ?? this.destination ?? dir.clone().multiplyScalar(0.002);
+      this.destination = null; this.galaxy.home = false; this.bound = true; this.staged = false;
+      this.look = { ra, dec, fov };   // so that switching to the sky view lands on the same object
+      this.galaxy.go(at, 0.0035, 3.4, () => { this.bound = false; this.staged = true; }, dir.clone().negate());
+      return;
+    }
     const from = direction(this.look.ra, this.look.dec), to = direction(ra, dec);
     this.flight = { from, to, fov0: this.look.fov, fov1: fov, t: 0, duration: seconds * (0.6 + 0.4 * Math.min(1, from.angleTo(to) / 0.6)) + (Math.abs(Math.log(this.look.fov / fov)) > 0.1 ? 0.4 : 0) };
   }
   wide() { this.flight = { from: direction(this.look.ra, this.look.dec), to: direction(this.look.ra, this.look.dec), fov0: this.look.fov, fov1: WIDE_FOV, t: 0, duration: 1.4 }; }
   get view() { return { ...this.look }; }
 
-  /** Landing page on: the Milky Way model. Off: dive to the Sun, then the night sky. */
+  /** Landing page on: the whole galaxy, turning. Off: fly to the Sun's surroundings. */
   setHome(on: boolean) {
-    if (on) { this.galaxy ??= new MilkyWay(); this.galaxy.dive = 0; this.diving = false; this.mode = "galaxy"; this.canvas.style.opacity = "1"; }
-    else if (this.mode === "galaxy") this.diving = true;
+    this.galaxy.home = on;
+    if (on) { this.bound = false; if (this.mode === "sky") this.setMode("galaxy"); this.galaxy.go(GALACTIC_CENTRE.clone().multiplyScalar(0.8), 34, 1.6); }
+    else if (this.mode === "galaxy" && !this.bound) this.galaxy.go(new THREE.Vector3(), 0.11, 3.4);
   }
+  private setMode(mode: "galaxy" | "sky") {
+    this.mode = mode;
+    this.galaxy.overlay.style.display = mode === "galaxy" ? "block" : "none";
+    this.overlay.style.display = mode === "sky" ? "block" : "none";
+    this.onLevel(mode);
+  }
+  get level() { return this.mode; }
+  setGalaxyFrame(meta: Parameters<Galaxy["setFrame"]>[0]) { this.galaxy.setFrame(meta); }
+  setDwarfs(buffer: ArrayBuffer, meta: Parameters<Galaxy["setDwarfs"]>[1]) { this.galaxy.setDwarfs(buffer, meta); }
+  /** Called when a published SPHEREx dwarf is clicked in the galaxy. */
+  onDwarf: (dwarf: NonNullable<ReturnType<Galaxy["dwarfAt"]>>) => void = () => {};
+  setObjects(objects: GalaxyObject[]) { this.galaxy.setObjects(objects); }
+  /** The two views of the same thing: the galaxy map, or the night sky. Each keeps the selected object in front. */
+  goLevel(level: "galaxy" | "sky") {
+    if (level === this.mode) return;
+    const spec = this.frameSpec;
+    if (level === "galaxy") {
+      this.flight = null; this.setMode("galaxy");
+      if (spec && this.selected) this.flyTo(spec.ra, spec.dec, this.look.fov);
+      else this.galaxy.go(new THREE.Vector3(), 0.11, 2.2);
+    } else {
+      this.staged = false;
+      const [ra, dec] = spec ? [spec.ra, spec.dec] : this.galaxy.toSky(this.galaxy.forward());
+      this.look = { ra, dec, fov: WIDE_FOV }; this.setMode("sky");
+      if (spec) this.flyTo(ra, dec, TELESCOPE_FOV, 1.8);
+    }
+  }
+  /** Where the next flight in the galaxy should end, for an object that is not among the listed dots. */
+  aimAt(ra: number, dec: number, parsecs: number) { this.destination = this.galaxy.direction(ra, dec).multiplyScalar(parsecs * 1e-3); }
 
   private resize() {
     const w = this.host.clientWidth, h = this.host.clientHeight;
@@ -206,21 +259,41 @@ export class Sky {
   }
   private perPixel() { return this.look.fov / this.host.clientHeight; } // degrees per CSS pixel at the centre
   private down = (e: PointerEvent) => { this.drag = { x: e.clientX, y: e.clientY, moved: 0 }; this.flight = null; this.canvas.setPointerCapture(e.pointerId); };
+  private hoverAt = 0;
+  private hovered = -1;
+  private hover = (e: PointerEvent) => {
+    // Over the galaxy, report the published dwarf under the pointer: the interface previews it, and it can be clicked.
+    if (this.drag || this.mode !== "galaxy" || this.galaxy.home || e.target !== this.canvas) { if (this.hovered !== -1 && e.target === this.canvas) { this.hovered = -1; this.onHover(null, 0, 0); } this.canvas.style.cursor = ""; return; }
+    const now = performance.now(); if (now - this.hoverAt < 60) return; this.hoverAt = now;
+    const rect = this.canvas.getBoundingClientRect(), hit = this.galaxy.dwarfAt(e.clientX - rect.left, e.clientY - rect.top, rect.width, rect.height);
+    this.canvas.style.cursor = hit ? "pointer" : "";
+    if ((hit?.index ?? -1) === this.hovered) return;
+    this.hovered = hit?.index ?? -1;
+    this.onHover(hit ? { kind: "dwarf", ...hit } : null, e.clientX, e.clientY);
+  };
   private move = (e: PointerEvent) => {
+    this.hover(e);
     if (!this.drag) return;
     const dx = e.clientX - this.drag.x, dy = e.clientY - this.drag.y, k = this.perPixel();
     this.drag.moved += Math.abs(dx) + Math.abs(dy); this.drag.x = e.clientX; this.drag.y = e.clientY;
+    if (this.mode === "galaxy") { if (!this.galaxy.home) this.galaxy.rotate(dx, dy); return; }
     this.look.dec = Math.max(-89.5, Math.min(89.5, this.look.dec + dy * k));
     this.look.ra = ((this.look.ra + dx * k / Math.max(0.05, Math.cos(this.look.dec * DEG))) % 360 + 360) % 360;
   };
   private up = (e: PointerEvent) => {
     if (!this.drag) return;
     const still = this.drag.moved < 4; this.drag = null;
-    if (still && e.target === this.canvas) { const p = this.unproject(e.clientX, e.clientY); if (p) this.onSkyClick(p[0], p[1]); }
+    if (still && e.target === this.canvas && this.mode === "galaxy" && !this.galaxy.home) {
+      const rect = this.canvas.getBoundingClientRect(), hit = this.galaxy.dwarfAt(e.clientX - rect.left, e.clientY - rect.top, rect.width, rect.height);
+      if (hit) { this.hovered = -1; this.onHover(null, 0, 0); this.onDwarf(hit); }
+    }
+    if (still && e.target === this.canvas && this.mode === "sky") { const p = this.unproject(e.clientX, e.clientY); if (p) this.onSkyClick(p[0], p[1]); }
   };
   private wheel = (e: WheelEvent) => {
     e.preventDefault(); this.flight = null;
-    this.look.fov = Math.max(0.03, Math.min(100, this.look.fov * Math.exp(e.deltaY * 0.0016)));
+    const factor = Math.exp(e.deltaY * 0.0016);
+    if (this.mode === "galaxy") { if (!this.galaxy.home) { this.galaxy.zoom(factor); if (this.galaxy.distance > 0.03) this.staged = false; } return; }
+    this.look.fov = Math.max(0.03, Math.min(100, this.look.fov * factor));
   };
   private unproject(clientX: number, clientY: number): [number, number] | null {
     const rect = this.canvas.getBoundingClientRect();
@@ -247,19 +320,37 @@ export class Sky {
       this.look.fov = Math.exp(Math.log(f.fov0) + (Math.log(f.fov1) - Math.log(f.fov0)) * zoom);
       if (f.t >= 1) this.flight = null;
     }
-    if (this.mode === "galaxy" && this.galaxy) {
-      const g = this.galaxy;
-      if (this.diving) { g.dive = Math.min(1, g.dive + dt / 1.7); if (g.dive > 0.82) this.canvas.style.opacity = "0"; }
-      g.update(dt, w, h);
+    if (this.mode === "galaxy") {
+      const g = this.galaxy; g.selected = this.selected; g.staged = this.staged;
+      g.update(dt, w, h, Boolean(this.drag), this.renderer.getPixelRatio());
       this.renderer.setViewport(0, 0, w, h); this.renderer.setScissorTest(false); this.renderer.clear();
       this.renderer.render(g.scene, g.camera);
-      const p = g.sunWorld().project(g.camera), show = !this.diving && p.z < 1;
-      this.sunLabel.style.display = show ? "flex" : "none";
-      if (show) this.sunLabel.style.transform = `translate(${(p.x + 1) / 2 * w}px, ${(1 - p.y) / 2 * h}px)`;
-      if (g.dive >= 1) { this.mode = "sky"; this.diving = false; this.sunLabel.style.display = "none"; this.canvas.style.opacity = "1"; }
+      // The object's picture on the left of the free area, its 3D view on the right.
+      const spec = this.frameSpec, image = spec && typeof spec.image === "string" ? spec.image : null, show = this.staged && Boolean(this.selected) && !g.home;
+      const free = w - this.insets.left - this.insets.right, wide = w > 900, twin = this.portrait.active && wide, gap = 40;
+      const size = Math.max(150, Math.min(380, h * 0.42, twin ? (free - gap - 40) / 2 : free - 40)), centre = this.insets.left + free / 2;
+      const x0 = twin ? centre - size - gap / 2 : centre - size / 2, y0 = h / 2 - size / 2;
+      this.stage.style.display = show ? "block" : "none";
+      this.galaxy.overlay.style.visibility = show ? "hidden" : "visible";   // labels and dots would sit on the picture
+      this.stagePortrait.style.display = show && twin ? "block" : "none";
+      if (show) {
+        const img = this.stage.children[1] as HTMLImageElement, wait = this.stage.children[2] as HTMLElement;
+        img.style.display = image ? "block" : "none"; wait.style.display = image ? "none" : "grid";
+        if (image && img.getAttribute("src") !== image) img.src = image;
+        img.style.opacity = String((this.frame.material as THREE.MeshBasicMaterial).opacity);
+        (this.stage.firstChild as HTMLElement).textContent = spec?.label ?? "";
+        if (spec) (this.stage.lastChild as HTMLElement).textContent = `Telescope image · north up, east left · ${spec.sizeArcsec >= 180 ? (spec.sizeArcsec / 60).toFixed(1) + "′" : Math.round(spec.sizeArcsec) + "″"} across`;
+        this.stage.style.transform = `translate(${x0}px, ${y0}px)`; this.stage.style.width = `${size}px`;
+        if (twin) {
+          const px = x0 + size + gap;
+          this.stagePortrait.innerHTML = this.portraitLabel.innerHTML; this.stagePortrait.style.left = `${px}px`; this.stagePortrait.style.top = `${y0 - 46}px`; this.stagePortrait.style.width = `${size}px`;
+          this.portrait.render(this.renderer, px, h - (y0 + size), size, dt, 1);
+        }
+      }
       this.raf = requestAnimationFrame(this.tick);
       return;
     }
+    this.stage.style.display = "none"; this.stagePortrait.style.display = "none";
     // At telescope zoom the frame moves left of the free area and the portrait takes the right.
     const tele = THREE.MathUtils.smoothstep(Math.log(0.6 / this.look.fov), 0, Math.log(0.6 / 0.2));
     const hasPortrait = this.portrait.active && this.frameSpec !== null;
@@ -310,6 +401,6 @@ export class Sky {
   dispose() {
     this.disposed = true; cancelAnimationFrame(this.raf);
     window.removeEventListener("pointermove", this.move); window.removeEventListener("pointerup", this.up);
-    this.renderer.dispose(); this.canvas.remove(); this.overlay.remove();
+    this.renderer.dispose(); this.canvas.remove(); this.overlay.remove(); this.galaxy.overlay.remove(); this.stage.remove(); this.stagePortrait.remove();
   }
 }
