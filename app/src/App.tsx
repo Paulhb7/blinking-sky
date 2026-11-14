@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Search, Shuffle } from "lucide-react";
 import Landing from "./Landing";
+import CountUp from "./reactbits/CountUp";
+import GradientText from "./reactbits/GradientText";
 import Panel, { type SpherexView } from "./Panel";
 import Slides from "./deck/Slides";
 import { GROUPS, loadQueue, loadSpherexCatalog, readVotes, sexagesimal, writeVote, type QueueSource, type SpxCatalog, type SpxTarget, type Vote } from "./data";
@@ -186,11 +188,11 @@ export default function App() {
       <aside className="left glass" ref={leftRef} aria-label="Blinking Sky">
         <header>
           <p className="eyebrow">NASA SPHEREx · real images</p>
-          <h1>Blinking <span>Sky</span></h1>
+          <h1>Blinking <GradientText colors={["#a5f3fc", "#e0f7ff", "#7dd3fc", "#a5f3fc"]} animationSpeed={8} className="brand-accent">Sky</GradientText></h1>
           <p className="lead">The infrared sky, seen again every six months in 102 colours. Blink two dates to see what moves. Blink two colours to see what it is made of.</p>
         </header>
         <button type="button" className="primary" onClick={nextUnchecked} disabled={!queue.length}><Shuffle size={14} /> Show me one nobody has checked</button>
-        <p className="count">{queue.length ? <>{queue.length - checked} unchecked sources · you have looked at {checked}{found ? <> · <b>{found} marked as fading</b></> : null}</> : "Loading the review queue…"}</p>
+        <p className="count">{queue.length ? <><CountUp key={queue.length - checked} to={queue.length - checked} from={Math.max(0, queue.length - checked - 40)} duration={0.9} /> unchecked sources · you have looked at {checked}{found ? <> · <b>{found} marked as fading</b></> : null}</> : "Loading the review queue…"}</p>
         <form className="search" onSubmit={submit}>
           <Search size={13} /><input value={query} onChange={(e) => { setQuery(e.target.value); setError(""); }} placeholder="RA Dec, or a name · 133.795 -7.245" aria-label="Sky position or name" /><button type="submit">Go</button>
         </form>

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { createPortal } from "react-dom";
 import { Pause, Play, Printer, ScanLine, X } from "lucide-react";
 import { VOTES, dayLabel, expectedShift, mjdLabel, sexagesimal, type SpxCatalog, type SpxFrame, type SpxTarget, type Vote } from "./data";
+import DecryptedText from "./reactbits/DecryptedText";
 import "./panel.css";
 
 export type SpherexView = { kind: "date" | "colour"; frame: number; playing: boolean; flagged: boolean; opacity: number; pixelBox: boolean };
@@ -139,7 +140,7 @@ export default function SpherexPanel({ target, catalog, view, ready, error, vote
       <header className="spx-head">
         <div>
           <span className={`spx-chip ${chipClass}`}>{chip}</span>
-          <h2>{target.name}</h2>
+          <h2><DecryptedText key={target.id} text={target.name} animateOn="view" sequential speed={28} /></h2>
           <p className="spx-mono">{sexagesimal(target.ra, target.dec)}</p>
         </div>
         <button type="button" className="spx-icon" onClick={onClose} aria-label="Close the SPHEREx panel"><X size={14} /></button>

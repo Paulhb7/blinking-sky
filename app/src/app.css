@@ -70,7 +70,8 @@ p, h1, h2, h3, figure, dl, dd { margin: 0; }
 .home-hero { align-self: center; max-width: 920px; }
 .home-kicker { font: 11px var(--font-geist-mono); letter-spacing: 0.22em; text-transform: uppercase; color: var(--amber); margin-bottom: 18px; }
 .home h1 { font-size: clamp(40px, 6vw, 88px); font-weight: 650; letter-spacing: -0.045em; line-height: 0.98; }
-.home h1 span { color: var(--cyan); }
+.home h1 .home-h1-line { display: flex; flex-wrap: wrap; margin: 0; }
+.home h1 .home-h1-accent { display: inline-block; margin: 0; font: inherit; letter-spacing: inherit; }
 .home-lead { margin: 26px 0 30px; max-width: 600px; font-size: clamp(15px, 1.35vw, 19px); line-height: 1.6; color: var(--dim); }
 .home-actions { display: flex; flex-wrap: wrap; gap: 12px; }
 .home-cta { display: inline-flex; align-items: center; gap: 10px; padding: 15px 26px; border-radius: 999px; background: #cffafe; color: #04121a; font-size: 16px; font-weight: 650; box-shadow: 0 0 40px rgb(103 232 249 / 0.25); transition: transform 0.2s, background 0.2s; }
@@ -80,7 +81,7 @@ p, h1, h2, h3, figure, dl, dd { margin: 0; }
 .home-link { display: inline-flex; align-items: center; gap: 8px; margin-top: 22px; font: 11px var(--font-geist-mono); letter-spacing: 0.14em; text-transform: uppercase; color: var(--dim); }
 .home-link:hover { color: #fff; }
 .home-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; max-width: 980px; }
-.home-steps article { padding: 16px 18px; border: 1px solid var(--line); border-radius: 14px; background: rgb(3 6 11 / 0.6); backdrop-filter: blur(10px); color: var(--cyan); }
+.home-steps .home-step { padding: 16px 18px; border: 1px solid var(--line); border-radius: 14px; background: rgb(3 6 11 / 0.6); backdrop-filter: blur(10px); color: var(--cyan); }
 .home-steps h2 { margin: 10px 0 4px; font-size: 16px; font-weight: 600; color: #fff; }
 .home-steps p { font-size: 13px; color: var(--dim); }
 .home-foot { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px 36px; padding-top: 16px; border-top: 1px solid var(--line); }
@@ -91,3 +92,7 @@ p, h1, h2, h3, figure, dl, dd { margin: 0; }
 .app[data-presenting] .left, .app[data-presenting] .spx-panel, .app[data-presenting] .where, .app[data-presenting] .home { visibility: hidden; }
 .left-links { display: flex; gap: 14px; font: 10px var(--font-geist-mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--faint); }
 .left-links button:hover { color: #fff; }
+.home-star { font-size: 15px; cursor: pointer; }
+.home-actions { align-items: center; }
+.left h1 .brand-accent { display: inline-block; font: inherit; letter-spacing: inherit; margin: 0; }
+.home-foot b * { font-size: inherit !important; font-weight: inherit !important; color: inherit !important; letter-spacing: inherit; }

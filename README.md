@@ -34,6 +34,7 @@ Les sources listées sont des **candidates**. Le type vient d'une photométrie S
 |---|---|
 | `app/` | L'application (Vite, React, three.js) |
 | `app/src/spherex/` | Lecture des images SPHEREx par plages d'octets, WCS, empilement, photométrie rapide, index |
+| `app/src/reactbits/` | Composants d'interface animés repris de React Bits (reactbits.dev), sous leur propre licence |
 | `app/validate.mjs` | Comparaison du lecteur JavaScript avec les mesures de référence |
 | `app/public/index/` | Index des 1,6 million d'images publiques (DR1 et QR3), en tuiles |
 | `app/public/data/` | Champs préparés, file de revue, étoiles, images profondes |
@@ -42,4 +43,4 @@ Les sources listées sont des **candidates**. Le type vient d'une photométrie S
 
 ## Crédits
 
-SPHEREx : NASA/JPL-Caltech/SPHEREx, via NASA/IPAC IRSA. Positions et mouvements : CatWISE2020. Gabarits spectraux : Gagné et al. 2026. Étoiles : HYG Database v4.4 (CC BY-SA 4.0). Images profondes : Legacy Surveys DR10 et unWISE.
+SPHEREx : NASA/JPL-Caltech/SPHEREx, via NASA/IPAC IRSA. Positions et mouvements : CatWISE2020. Gabarits spectraux : Gagné et al. 2026. Étoiles : HYG Database v4.4 (CC BY-SA 4.0). Images profondes : Legacy Surveys DR10 et unWISE. Interface : three.js (ciel et vue 3D en WebGL), React Bits (textes et cartes animés), Lucide (icônes).
