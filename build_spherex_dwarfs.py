@@ -5,7 +5,7 @@ Distance, in this order: Gaia DR3 parallax (better than 5 sigma); UltracoolSheet
 SPHEREx type and the CatWISE W2 magnitude, using the type-magnitude relation measured on the objects of this same
 table that do have a parallax. Inputs: the published table (local copy), cache/spiff_x_gaia.csv and
 cache/spiff_x_catwise.csv (positional cross-matches made at NASA/IPAC IRSA on 2026-11-14, 4.5 and 5 arcsec).
-usage: <python with numpy, astropy> build_spherex_dwarfs.py app/public/data
+usage: <python with numpy, astropy> build_spherex_dwarfs.py app/public/data <published tables dir>
 Record (little-endian, 16 bytes): ra f32, dec f32 (deg, J2000), distance f32 (pc), type u8 (M0 = 0, L0 = 10, T0 = 20,
 Y0 = 30), group u8 (0 known, 1 known candidate, 2 new candidate, 3 new in that study), basis u8 (0 measured,
 1 estimated), pad."""
@@ -15,7 +15,7 @@ from astropy.coordinates import SkyCoord
 import astropy.units as u
 
 OUT = pathlib.Path(sys.argv[1]); HERE = pathlib.Path(__file__).parent
-K = pathlib.Path("/Users/paul.barbaste/Desktop/h/h-astronomists/planet9/H_spherex/K4_brown_dwarfs/raw")  # read-only
+K = pathlib.Path(sys.argv[2])  # folder of the published SPHEREx tables, read-only
 rows = list(csv.DictReader(open(K / "zenodo_spiff/tables/spiff_tables/spherex_autotype_datasets_fulltable.csv")))
 n = len(rows)
 sc = SkyCoord([x["ra_j2000"] for x in rows], [x["dec_j2000"] for x in rows], unit=(u.hourangle, u.deg))

@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
-import { readExposure, positionAt, keyOf, pool, stackWindows, methaneIndex, stats, GRID } from "/Users/paul.barbaste/Desktop/h/atlas-spherex/tool/app/src/spherex/core.js";
+import { readExposure, positionAt, keyOf, pool, stackWindows, methaneIndex, stats, GRID } from "./src/spherex/core.js";
 const name = process.argv[2] ?? "2MASSI_J0415195-093506";
-const js = JSON.parse(readFileSync(`/Users/paul.barbaste/Desktop/h/h-astronomists/spherex/H3_cold_dwarfs/results/meas3/${name}.json`));
+const js = JSON.parse(readFileSync(`${process.env.REFERENCE_DIR}/${name}.json`));
 const src = { ra: js.ra, dec: js.dec, epoch: js.ep, pm: [js.pmra, js.pmdec] };
 const meas = js.meas.filter((m) => m.fbad < 0.3).slice(0, Number(process.argv[3] ?? 60));
 const t0 = Date.now(), rows = [];

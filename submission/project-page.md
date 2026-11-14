@@ -27,13 +27,15 @@ The same blink led to a result. By crossing WISE, which says where to look, with
 
 ## Project (link)
 
-[public address of the tool]
+https://blinking-sky.vercel.app
+
+Source code (the repository must be made public before this link is used): https://github.com/Paulhb7/blinking-sky
 
 ---
 
 ## Project Details
 
-The headings follow the six questions of the form, in order. Images to insert are marked [image: file name]; the files are in `images/`.
+The headings follow the six questions of the form, in order. The images are shown where they go; the files to upload are in `images/`.
 
 **What does it do?**
 
@@ -49,8 +51,12 @@ Try it in one minute at https://blinking-sky.vercel.app (“Open the sky”):
 - Open “WISE 0855−0714” and blink “Across dates”: the coldest known brown dwarf, 7 light-years away, shifts between May 2025 and May 2026.
 - Open a source under “Candidates · no publication found” and blink “Across colours”: it is there at 4 µm and gone in the methane band.
 
-[image: 05-solar-system-ceres.png]
-[image: 07-brown-dwarf-wise0855-dates.png]
+![Ceres, read live: the stars stay, the asteroid moves](images/05-solar-system-ceres.png)
+*Ceres, read live: the stars stay, the asteroid moves*
+
+![WISE 0855−0714 across three dates](images/07-brown-dwarf-wise0855-dates.png)
+*WISE 0855−0714 across three dates*
+
 
 **How does it work?**
 
@@ -65,17 +71,22 @@ To say what an object is, we use one simple test, the methane index: the flux at
 - The candidate table gives observers a short list for follow-up spectroscopy. [It is being deposited on Zenodo: add the link, or remove this sentence.]
 - The site is static and reads NASA's archive directly, so it costs nothing to keep online.
 
-[image: 08-candidate-methane-band.png]
+![A candidate in the methane band, with its SPHEREx spectrum](images/08-candidate-methane-band.png)
+*A candidate in the methane band, with its SPHEREx spectrum*
+
 
 **What is the intended impact?**
 
 SPHEREx re-observes the whole sky every six months, and nobody can look at more than a billion sources alone. We want the public to do with SPHEREx what volunteers of Backyard Worlds: Planet 9 did with WISE: blink, notice, report. The review queue is the first step: 382 real sources that nobody has examined, open to anyone. Next, we want to collect the votes so that several people looking at the same source produce a shared answer, ask for spectra of the 12 candidates, and extend the search to the next SPHEREx data release.
 
-[image: 10-review-queue.png]
+![The review queue: a source nobody has examined](images/10-review-queue.png)
+*The review queue: a source nobody has examined*
+
 
 **What tools, coding languages, hardware, or software did you use?**
 
 - Web tool: TypeScript, React, Vite and three.js (WebGL). Static hosting on Vercel.
+- Source code: https://github.com/Paulhb7/blinking-sky
 - Data preparation: Python with astropy and numpy.
 - Data: SPHEREx level-2 images from NASA/IPAC IRSA, CatWISE2020, and the other sources listed below.
 - Hardware: two laptops. No server and no paid computing.
@@ -91,7 +102,9 @@ The methane analysis, the index of SPHEREx images and the lists of exposures for
 - One map for everything SPHEREx sees, at real distances, from an asteroid 3 au from the Sun to a galaxy 49 million light-years away.
 - Crossing data sets. SPHEREx alone does not say where to look, and WISE alone does not say what an object is. Together they do.
 
-[image: 04-solar-system-map.png]
+![The Solar System as SPHEREx saw it](images/04-solar-system-map.png)
+*The Solar System as SPHEREx saw it*
+
 
 **What factors did your team consider?**
 

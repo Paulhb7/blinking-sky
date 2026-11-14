@@ -5,7 +5,7 @@ Selection (from the cached CatWISE2020 scan, W1-W2 > 2.0, W2 S/N > 10, clean fla
 motion >= 0.15 arcsec/yr at 3.5-5 sigma or 0.10-0.15 arcsec/yr at >= 5 sigma. Removed: sources within 20-25 arcsec of the
 UltracoolSheet, of the SPHEREx table of Gagne et al. 2026, of the published candidate lists used earlier and of the
 Backyard Worlds list of Schneider et al. 2026; sources in clumps (more than 5 selected red sources within 1 degree).
-usage: <python with numpy, astropy> build_queue.py <H3_cold_dwarfs dir> app/public/data/queue.json
+usage: <python with numpy, astropy> build_queue.py <H3_cold_dwarfs dir> app/public/data/queue.json <published tables dir>
 """
 import csv, glob, json, pathlib, re, sys
 import numpy as np
@@ -13,7 +13,7 @@ from astropy.coordinates import SkyCoord
 import astropy.units as u
 
 H3 = pathlib.Path(sys.argv[1]); OUT = pathlib.Path(sys.argv[2])
-K4 = pathlib.Path("/Users/paul.barbaste/Desktop/h/h-astronomists/planet9/H_spherex/K4_brown_dwarfs/raw")  # read-only
+K4 = pathlib.Path(sys.argv[3])  # folder of the published SPHEREx tables, read-only
 
 
 def fl(s):
