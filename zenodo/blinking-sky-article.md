@@ -87,7 +87,7 @@ The other 33 candidates were published earlier as candidates without a spectrum;
 
 ## 7. What was done before and during the event
 
-The methane analysis (Sections 4 and 5), the index of SPHEREx images and the lists of exposures for Solar System bodies were produced by the first author in the days before the event. The web tool, its in-browser reader, the maps, the review queue and this text were made during the 48 hours of the event. The repository's journal separates the two.
+The methane analysis (Sections 4 and 5), the index of SPHEREx images and the lists of exposures for Solar System bodies were produced by the first author in the days before the event. The web tool, its in-browser reader, the maps, the review queue and this text were made during the 48 hours of the event.
 
 ## 8. Files in this deposit
 
