@@ -65,7 +65,7 @@ export class Portrait {
   private glowUniforms = { uColour: { value: new THREE.Color(0.6, 0.3, 0.5) }, uPower: { value: 0.5 }, uFade: { value: 1 } };
   private target: PortraitLook | null = null;
   /** A spiral galaxy, for objects that are galaxies: the same schematic model as the map, small and tilted. */
-  private spiral = milkyWayDisk(26000, 400, 1.0);
+  private spiral = milkyWayDisk(26000, 300, 1.0);
   private tilt = new THREE.Group();
   private bright = 1;
   active = false;
@@ -95,7 +95,7 @@ export class Portrait {
     this.uniforms.uTime.value += dt;
     this.bright += (this.target.brightness - this.bright) * Math.min(1, dt * 5);
     this.uniforms.uBright.value = this.bright; this.uniforms.uFade.value = this.glowUniforms.uFade.value = Math.max(0, Math.min(1, fade));
-    if (this.target.kind === "galaxy") { this.spiral.group.rotation.y -= dt * 0.12; this.spiral.update(size * renderer.getPixelRatio() / (2 * Math.tan(15 * Math.PI / 180)), 0.42 * Math.max(0, Math.min(1, fade))); }
+    if (this.target.kind === "galaxy") { this.spiral.group.rotation.y -= dt * 0.12; this.spiral.update(size * renderer.getPixelRatio() / (2 * Math.tan(15 * Math.PI / 180)), 1.0 * Math.max(0, Math.min(1, fade)), dt); }
     renderer.clearDepth();
     renderer.setViewport(x, y, size, size); renderer.setScissor(x, y, size, size); renderer.setScissorTest(true);
     renderer.render(this.scene, this.camera);

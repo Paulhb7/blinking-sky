@@ -35,14 +35,14 @@ export type DwarfMeta = { count: number; total: number; measured: number; estima
 
 // The published SPHEREx dwarfs: a dot each, coloured by the type SPHEREx gave it (M orange, L red, T magenta, Y violet).
 const STAR_VERT = /* glsl */ `
-  attribute float aType; attribute float aBasis; uniform float uScale, uSize; varying vec3 vTint; varying float vAlpha;
+  attribute float aType; attribute float aBasis; uniform float uScale, uSize, uFar; varying vec3 vTint; varying float vAlpha;
   void main() {
     vec4 mv = modelViewMatrix * vec4(position, 1.0);
     gl_Position = projectionMatrix * mv;
     gl_PointSize = uSize * uScale;
     vec3 m = vec3(1.0, 0.66, 0.40), l = vec3(1.0, 0.36, 0.28), t = vec3(0.92, 0.36, 0.66), y = vec3(0.62, 0.45, 1.0);
     vTint = aType < 10.0 ? m : aType < 20.0 ? mix(m, l, clamp((aType - 9.0) / 3.0, 0.0, 1.0)) : aType < 30.0 ? mix(l, t, clamp((aType - 19.0) / 3.0, 0.0, 1.0)) : y;
-    vAlpha = mix(1.0, 0.6, aBasis);   // estimated distances are drawn fainter than measured ones
+    vAlpha = mix(1.0, 0.6, aBasis) * uFar;   // estimated distances are drawn fainter than measured ones
   }`;
 const STAR_FRAG = /* glsl */ `
   varying vec3 vTint; varying float vAlpha;
@@ -67,7 +67,7 @@ export class Galaxy {
   readonly camera = new THREE.PerspectiveCamera(42, 1, 1e-6, 2000);
   readonly overlay = document.createElement("div");
   private disk = milkyWayDisk();
-  private starUniforms = { uScale: { value: 1 }, uSize: { value: 3 } };
+  private starUniforms = { uScale: { value: 1 }, uSize: { value: 3 }, uFar: { value: 1 } };
   private dwarfs: { position: Float32Array; meta: DwarfMeta; sky: Float32Array; distance: Float32Array; basis: Uint8Array; group: Uint8Array } | null = null;
   private framed = false;
   private galUniforms = { uScale: { value: 1 }, uAlpha: { value: 0 } };
@@ -246,8 +246,10 @@ export class Galaxy {
     };
     // Dots stay a readable size at every zoom; the model dims once the camera is inside the disk, among the dwarfs.
     this.starUniforms.uScale.value = pixelRatio; this.starUniforms.uSize.value = fromSun > 2 ? 2.4 : fromSun > 0.3 ? 4 : 6.5;
+    // Seen from outside the galaxy, the 15,739 dwarfs would pile up on one pixel: they fade out with distance.
+    this.starUniforms.uFar.value = 1 - 0.985 * THREE.MathUtils.smoothstep(fromSun, 1.5, 12);
     // From far outside, our galaxy shrinks to a few pixels: its light is turned down so it does not burn out.
-    this.disk.update(height / (2 * Math.tan(this.camera.fov * DEG / 2)), THREE.MathUtils.lerp(0.12, 1, THREE.MathUtils.smoothstep(fromSun, 0.4, 4)) * Math.min(1, Math.pow(260 / Math.max(260, fromSun), 1.7) + 0.004));
+    this.disk.update(pixelRatio * height / (2 * Math.tan(this.camera.fov * DEG / 2)), THREE.MathUtils.lerp(0.12, 1, THREE.MathUtils.smoothstep(fromSun, 0.4, 4)) * Math.min(1, Math.pow(260 / Math.max(260, fromSun), 1.7) + 0.004), dt);
     this.galUniforms.uScale.value = pixelRatio; this.galUniforms.uAlpha.value = THREE.MathUtils.smoothstep(fromSun, 60, 600);
     (this.here.lastChild as HTMLElement).textContent = fromSun > 150 ? "Milky Way · you are here" : "You are here";
     place(new THREE.Vector3(0, 0, 0), this.here, fromSun > 0.25);

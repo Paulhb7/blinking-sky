@@ -43,40 +43,55 @@ function sample(starCount: number, cloudCount: number) {
   return { stars, tint, clouds, size };
 }
 
-const VERT = /* glsl */ `
-  attribute float aTint; uniform float uSize, uPx; varying float vTint; varying float vFade;
+// Rendering as in the H.Atlas landing galaxy (h-suite, components/Galaxy3D.tsx): each star its own size, young arm
+// stars larger, old bulge and disk stars warm white and small, a slow twinkle, soft gas, one glow at the core. Blue here, violet there.
+const STAR_VERT = /* glsl */ `
+  attribute float aTint; attribute float aSeed; uniform float uTime, uPx, uSprite; varying vec3 vC; varying float vA;
   void main() {
     vec4 mv = modelViewMatrix * vec4(position, 1.0);
+    vC = mix(vec3(0.16, 0.52, 1.0), vec3(1.0, 0.93, 0.9), aTint);   // young arm stars blue, old stars warm white
+    vA = (0.5 + 0.2 * sin(uTime * (0.8 + aSeed) + aSeed * 50.0)) * (1.0 - 0.3 * aTint);
+    // The model stands for stars too far to be measured: it fades out close to the camera.
+    vA *= smoothstep(0.5, 3.0, -mv.z);
+    gl_PointSize = clamp((0.07 + 0.09 * (1.0 - aTint) * aSeed) * uSprite * uPx / max(0.01, -mv.z), 1.5, 48.0);
     gl_Position = projectionMatrix * mv;
-    float px = uSize * aTint * uPx / max(0.01, -mv.z);
-    gl_PointSize = clamp(px, 1.4, 56.0);
-    // The model stands for stars too far to be measured: it fades out where the real stars take over.
-    vFade = smoothstep(0.5, 3.0, -mv.z);
-    vTint = aTint;
   }`;
+const DISC = /* glsl */ `float disc() { float d = length(gl_PointCoord - 0.5) * 2.0; return d < 0.35 ? mix(1.0, 0.5, d / 0.35) : max(0.0, mix(0.5, 0.0, (d - 0.35) / 0.65)); }`;
 const STAR_FRAG = /* glsl */ `
-  uniform vec3 uDense, uSparse; uniform float uBright; varying float vTint; varying float vFade;
-  void main() { float r = length(gl_PointCoord - 0.5) * 2.0; float a = smoothstep(1.0, 0.0, r); gl_FragColor = vec4(mix(uDense, uSparse, vTint) * a * a * uBright * vFade, 1.0); }`;
-const STAR_VERT = VERT.replace("uSize * aTint", "uSize");
+  uniform float uBright; varying vec3 vC; varying float vA; ${DISC}
+  void main() { float t = disc() * vA * uBright; gl_FragColor = vec4(vC * t, t); }`;
+const CLOUD_VERT = /* glsl */ `
+  attribute float aTint; uniform float uPx, uSprite; varying float vFade;
+  void main() { vec4 mv = modelViewMatrix * vec4(position, 1.0); vFade = smoothstep(0.5, 3.0, -mv.z); gl_PointSize = clamp(aTint * 2.2 * uSprite * uPx / max(0.01, -mv.z), 1.0, 240.0); gl_Position = projectionMatrix * mv; }`;
 const CLOUD_FRAG = /* glsl */ `
-  uniform vec3 uTint; uniform float uOpacity; varying float vFade;
-  void main() { float r = length(gl_PointCoord - 0.5) * 2.0; float a = smoothstep(1.0, 0.0, r); gl_FragColor = vec4(uTint * a * uOpacity * vFade, 1.0); }`;
+  uniform float uOpacity; varying float vFade; ${DISC}
+  void main() { float t = disc() * uOpacity * vFade; gl_FragColor = vec4(vec3(0.34, 0.56, 1.0) * t, t); }`;
 
 /** Position of the Galactic centre when the Sun is the origin. */
 export const GALACTIC_CENTRE = new THREE.Vector3(MILKY_WAY.r0, -MILKY_WAY.z0, 0);
 
-/** The model as two point clouds, placed so that the Sun is at the origin. `update` takes pixels per unit angle. */
-export function milkyWayDisk(starCount = 300000, cloudCount = 3600, sprite = 1) {
-  const data = sample(starCount, cloudCount);
-  const starUniforms = { uSize: { value: 0.085 * sprite }, uPx: { value: 800 }, uDense: { value: new THREE.Color("#2885ff") }, uSparse: { value: new THREE.Color("#ffa27a") }, uBright: { value: 0.3 } };
-  const cloudUniforms = { uSize: { value: 2.2 * sprite }, uPx: { value: 800 }, uTint: { value: new THREE.Color("#ffd0d6") }, uOpacity: { value: 0.026 } };
+/** The model as two point clouds and a core glow, placed so that the Sun is at the origin. `update` takes device pixels per unit angle. */
+export function milkyWayDisk(starCount = 300000, cloudCount = 2600, sprite = 1) {
+  const data = sample(starCount, cloudCount), density = Math.min(1, 160000 / starCount) * 0.45 + 0.55;
+  const starUniforms = { uTime: { value: 0 }, uPx: { value: 800 }, uSprite: { value: sprite }, uBright: { value: density } };
+  const cloudUniforms = { uPx: { value: 800 }, uSprite: { value: sprite }, uOpacity: { value: 0.045 } };
+  const seed = new Float32Array(starCount); for (let i = 0; i < starCount; i++) seed[i] = ((i * 2654435761) >>> 0) / 4294967296;
   const stars = new THREE.BufferGeometry();
-  stars.setAttribute("position", new THREE.BufferAttribute(data.stars, 3)); stars.setAttribute("aTint", new THREE.BufferAttribute(data.tint, 1));
+  stars.setAttribute("position", new THREE.BufferAttribute(data.stars, 3)); stars.setAttribute("aTint", new THREE.BufferAttribute(data.tint, 1)); stars.setAttribute("aSeed", new THREE.BufferAttribute(seed, 1));
   const starPoints = new THREE.Points(stars, new THREE.ShaderMaterial({ vertexShader: STAR_VERT, fragmentShader: STAR_FRAG, uniforms: starUniforms, blending: THREE.AdditiveBlending, depthWrite: false, depthTest: false, transparent: true }));
   const clouds = new THREE.BufferGeometry();
   clouds.setAttribute("position", new THREE.BufferAttribute(data.clouds, 3)); clouds.setAttribute("aTint", new THREE.BufferAttribute(data.size, 1));
-  const cloudPoints = new THREE.Points(clouds, new THREE.ShaderMaterial({ vertexShader: VERT, fragmentShader: CLOUD_FRAG, uniforms: cloudUniforms, blending: THREE.AdditiveBlending, depthWrite: false, depthTest: false, transparent: true }));
+  const cloudPoints = new THREE.Points(clouds, new THREE.ShaderMaterial({ vertexShader: CLOUD_VERT, fragmentShader: CLOUD_FRAG, uniforms: cloudUniforms, blending: THREE.AdditiveBlending, depthWrite: false, depthTest: false, transparent: true }));
   starPoints.frustumCulled = cloudPoints.frustumCulled = false;
-  const group = new THREE.Group(); group.add(cloudPoints, starPoints); group.position.copy(GALACTIC_CENTRE);
-  return { group, update: (px: number, brightness = 1) => { starUniforms.uPx.value = cloudUniforms.uPx.value = px; starUniforms.uBright.value = 0.3 * brightness; cloudUniforms.uOpacity.value = 0.026 * brightness * brightness; } };
+  // A soft glow at the core.
+  const canvas = document.createElement("canvas"); canvas.width = canvas.height = 64;
+  const ctx = canvas.getContext("2d")!, g = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+  g.addColorStop(0, "rgba(255,255,255,1)"); g.addColorStop(0.35, "rgba(255,255,255,.5)"); g.addColorStop(1, "rgba(255,255,255,0)"); ctx.fillStyle = g; ctx.fillRect(0, 0, 64, 64);
+  const core = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(canvas), color: 0xe6f0ff, transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending, depthWrite: false, depthTest: false }));
+  core.scale.set(7, 7, 1);
+  const group = new THREE.Group(); group.add(cloudPoints, starPoints, core); group.position.copy(GALACTIC_CENTRE);
+  return { group, update: (px: number, brightness = 1, dt = 0) => {
+    starUniforms.uPx.value = cloudUniforms.uPx.value = px; starUniforms.uTime.value += dt;
+    starUniforms.uBright.value = density * brightness; cloudUniforms.uOpacity.value = 0.045 * brightness; core.material.opacity = 0.55 * Math.min(1, brightness);
+  } };
 }
