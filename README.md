@@ -25,8 +25,6 @@ Not everything here was made during the event. In plain terms:
 - The maps (Solar System, Milky Way, galaxies), the review queue, the illustrations, the guided introduction.
 - The demo video, the screenshots, the logo and the texts.
 
-`JOURNAL.md` (in French) is the day-by-day record and keeps the two apart.
-
 ## The twelve candidates
 
 ![Twelve cold brown dwarf candidates](submission/images/13-twelve-candidates.png)
@@ -85,7 +83,6 @@ The sources listed are **candidates**. The type comes from stacked, low-resoluti
 | `build_*.py`, `stack_images.py` | Scripts that prepared the data (they read local research folders, given as arguments) |
 | `zenodo/` | Draft article and the table of candidates |
 | `submission/` | Texts of the project page, screenshots, logo, poster, demo video and its source |
-| `JOURNAL.md` | What existed before the event and what was done during it (in French) |
 
 ## Credits
 
