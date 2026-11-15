@@ -65,8 +65,10 @@ p, h1, h2, h3, figure, dl, dd { margin: 0; }
 .home { position: absolute; inset: 0; z-index: 30; display: grid; grid-template-rows: auto 1fr auto auto; gap: clamp(16px, 3vh, 36px); padding: clamp(20px, 3.2vw, 48px); overflow-y: auto; animation: home-in 0.9s ease both; }
 @keyframes home-in { from { opacity: 0; } }
 .home-veil { position: absolute; inset: 0; z-index: -1; background: linear-gradient(90deg, rgb(4 7 13 / 0.78), rgb(4 7 13 / 0.3) 46%, transparent 68%), linear-gradient(180deg, rgb(4 7 13 / 0.5), transparent 26%, transparent 70%, rgb(4 7 13 / 0.85)); pointer-events: none; }
-.home-top { display: flex; justify-content: space-between; gap: 16px; font: 11px var(--font-geist-mono); letter-spacing: 0.18em; text-transform: uppercase; color: var(--faint); }
-.home-top span:first-child { color: var(--ink); letter-spacing: 0.3em; } .home-top b { color: var(--cyan); font-weight: 500; }
+.home-top { display: flex; align-items: center; gap: 22px; font: 11px var(--font-geist-mono); letter-spacing: 0.18em; text-transform: uppercase; color: var(--faint); }
+.home-top > span:first-child { color: var(--ink); letter-spacing: 0.3em; margin-right: auto; }
+.home-gh { display: inline-flex; align-items: center; gap: 8px; padding: 7px 12px; border: 1px solid var(--line); border-radius: 999px; color: var(--ink); text-decoration: none; letter-spacing: 0.14em; }
+.home-gh:hover { border-color: var(--cyan); color: var(--cyan); } .home-top b { color: var(--cyan); font-weight: 500; }
 .home-hero { align-self: center; max-width: 920px; }
 .home-kicker { font: 11px var(--font-geist-mono); letter-spacing: 0.22em; text-transform: uppercase; color: var(--amber); margin-bottom: 18px; }
 .home h1 { font-size: clamp(40px, 6vw, 88px); font-weight: 650; letter-spacing: -0.045em; line-height: 0.98; }
@@ -87,7 +89,7 @@ p, h1, h2, h3, figure, dl, dd { margin: 0; }
 .home-foot { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px 36px; padding-top: 16px; border-top: 1px solid var(--line); }
 .home-foot div { display: flex; align-items: baseline; gap: 8px; } .home-foot b { font-size: 22px; font-weight: 650; letter-spacing: -0.02em; color: #fff; } .home-foot span { font-size: 12px; color: var(--dim); }
 .home-foot p { flex-basis: 100%; font-size: 10.5px; color: var(--faint); }
-@media (max-width: 760px) { .home-steps { grid-template-columns: 1fr; } .home-top span:last-child { display: none; } }
+@media (max-width: 760px) { .home-steps { grid-template-columns: 1fr; } .home-top > span:nth-child(2) { display: none; } }
 .app[data-screen="home"] .left, .app[data-screen="home"] .spx-panel, .app[data-screen="home"] .where, .app[data-screen="home"] .sky-overlay { display: none; }
 .app[data-presenting="full"] .left, .app[data-presenting="full"] .spx-panel, .app[data-presenting] .where, .app[data-presenting] .home { visibility: hidden; }
 .left-links { display: flex; gap: 14px; font: 10px var(--font-geist-mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--faint); }
