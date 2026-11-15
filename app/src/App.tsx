@@ -7,7 +7,7 @@ import CountUp from "./reactbits/CountUp";
 import GradientText from "./reactbits/GradientText";
 import Panel, { type SpherexView } from "./Panel";
 import Slides, { type Director } from "./deck/Slides";
-import { GROUPS, VARIABLES, differenceImage, surveyFrames, type FrameKind, type SpxFrame, loadQueue, loadSolar, loadSolarFrames, loadSpherexCatalog, readVotes, sexagesimal, writeVote, type QueueSource, type SolarData, type SpxCatalog, type SpxTarget, type Vote } from "./data";
+import { GROUPS, VARIABLES, differenceImage, surveyFrames, fetchSharedVotes, sendSharedVote, type SharedVotes, type FrameKind, type SpxFrame, loadQueue, loadSolar, loadSolarFrames, loadSpherexCatalog, readVotes, sexagesimal, writeVote, type QueueSource, type SolarData, type SpxCatalog, type SpxTarget, type Vote } from "./data";
 import { DEFAULT_FIELD, startLive, startMover, type FieldArcmin, type LiveInput } from "./live";
 import { Sky, TELESCOPE_FOV, type Marker } from "./sky/Sky";
 import { photometricDistance, setRelation, type GalaxyObject, type SolarBody } from "./sky/galaxy";
@@ -47,6 +47,8 @@ export default function App() {
   const [open, setOpen] = useState<string | null>("start");
   const [view, setView] = useState<SpherexView>(VIEW);
   const [votes, setVotes] = useState(readVotes);
+  // What all visitors said of the sources of the queue, as far as this visit has asked.
+  const [sharedVotes, setSharedVotes] = useState<Record<string, SharedVotes>>({});
   const [query, setQuery] = useState("");
   const [where, setWhere] = useState("");
   const params = useMemo(() => new URLSearchParams(window.location.search), []);
@@ -87,6 +89,13 @@ export default function App() {
     differenceImage(firstDate.image, lastDate.image).then((image) => { if (!stale) setDiff({ id: base.id, first: firstDate.image, last: lastDate.image, image, label: `Difference · ${lastDate.label} minus ${firstDate.label}` }); }).catch(() => {});
     return () => { stale = true; };
   }, [base?.id, firstDate?.image, lastDate?.image]); // eslint-disable-line react-hooks/exhaustive-deps
+  // A source of the queue opens with the votes of the other visitors.
+  useEffect(() => {
+    if (base?.group !== "queue") return;
+    const id = base.id; let stale = false;
+    fetchSharedVotes(id).then((s) => { if (s && !stale) setSharedVotes((all) => ({ ...all, [id]: s })); });
+    return () => { stale = true; };
+  }, [base?.id, base?.group]);
   // The same patch in other surveys, asked for by the visitor: WISE and an optical survey, on the grid of the SPHEREx frame.
   const [surveys, setSurveys] = useState<{ id: string; size: number; frames: SpxFrame[] } | null>(null);
   const [surveyState, setSurveyState] = useState<"idle" | "loading" | "none">("idle");
@@ -433,7 +442,7 @@ export default function App() {
           <button type="button" onClick={() => sky.current?.wide()}>Wide sky</button>
         </div>
         <div className="left-links"><button type="button" onClick={() => setScreen("home")}>← Home</button><button type="button" onClick={() => { setGuide(0); sky.current?.goLevel("galaxy"); }}>How it works</button><button type="button" onClick={() => setPresenting("full")}>Presentation · P</button></div>
-        <p className="fine">In the galaxy: drag to turn, scroll to zoom, click a dot to fly to it. At the telescope: real SPHEREx exposures, read from NASA&apos;s archive. The galaxy&apos;s shape is a model; distances marked estimated or assumed are not measurements. Data: NASA/JPL-Caltech/SPHEREx · NASA/IPAC IRSA · Gagné et al. 2026 · Gaia DR3 · CatWISE2020. Nothing you do here is sent anywhere, except a sky position to legacysurvey.org if you ask for other surveys.</p>
+        <p className="fine">In the galaxy: drag to turn, scroll to zoom, click a dot to fly to it. At the telescope: real SPHEREx exposures, read from NASA&apos;s archive. The galaxy&apos;s shape is a model; distances marked estimated or assumed are not measurements. Data: NASA/JPL-Caltech/SPHEREx · NASA/IPAC IRSA · Gagné et al. 2026 · Gaia DR3 · CatWISE2020. What leaves this page: a sky position to legacysurvey.org if you ask for other surveys, and your vote on an unchecked source, with no name. Nothing else.</p>
       </aside>
       <p className="where">{where}</p>
       {screen === "sky" && <nav className="levels glass" aria-label="Scale">
@@ -473,7 +482,7 @@ export default function App() {
         onRecenter={() => sky.current?.flyTo(target.geometry?.centerRaDeg ?? target.ra, target.geometry?.centerDecDeg ?? target.dec, fovOf(target), 1.2)} onRetry={() => {}}
         field={target.live && !target.solar ? fieldArcmin : undefined} onField={changeField}
         onSurveys={loadSurveys} surveys={surveyState}
-        onVote={(vote: Vote) => setVotes(writeVote(target, vote))} onMore={live.current ? () => live.current?.more() : undefined} onNext={target.group === "queue" ? nextUnchecked : undefined}
+        onVote={(vote: Vote) => { setVotes(writeVote(target, vote)); if (target.group === "queue") sendSharedVote(target.id, vote).then((s) => { if (s) setSharedVotes((all) => ({ ...all, [target.id]: s })); }); }} shared={target.group === "queue" ? sharedVotes[target.id] : undefined} onMore={live.current ? () => live.current?.more() : undefined} onNext={target.group === "queue" ? nextUnchecked : undefined}
         onReplay={target.group === "unpublished" && !target.live ? () => replay(target) : undefined} />}
     </div>
   );

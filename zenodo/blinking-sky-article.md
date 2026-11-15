@@ -24,7 +24,7 @@ The name comes from the blink comparator, and from the citizen-science tradition
 - **Blink across colours.** The same position at 3.83–5.0 µm and in the methane band at 3.15–3.50 µm. A cold brown dwarf is bright in the first and almost gone in the second.
 - **A map with real distances.** The Milky Way with the Sun at the origin: 15,739 ultracool dwarfs already typed by SPHEREx (Gagné et al. 2026) placed at a measured or estimated distance, 43,463 galaxies at their redshift distance (2MASS Redshift Survey), and the candidates and unchecked sources of this work.
 - **The Solar System, which moves in hours.** 7,083 asteroids and comets that have a SPHEREx visit are placed where they were that day, with the Sun, the Earth and the planets. Clicking one reads the single exposures of its visit: the stars stay, the body moves.
-- **A review queue.** 382 red, moving CatWISE sources that nobody has examined in SPHEREx. The visitor looks at one, votes, and sees the measured methane index. Votes stay in the visitor's browser.
+- **A review queue.** 382 red, moving CatWISE sources that nobody has examined in SPHEREx. The visitor looks at one, votes, and sees the measured methane index. Votes are counted for all visitors, with no name and no account.
 
 ## 3. How the images are read
 

@@ -50,10 +50,11 @@ Real SPHEREx images at 4 µm and in the methane band. These are candidates: none
 - **What changed.** A difference image, last date minus first: black where an object was, white where it is now.
 - **Brightness at each date.** For fields read live, the source is measured at every pass. Two young stars are 4.4 and 2.3 times brighter after one year.
 - **Blink across colours.** The same position at 3.83–5.0 µm and in the methane band at 3.15–3.50 µm. A cold brown dwarf is bright in the first and almost gone in the second.
+- **Other surveys.** One click loads the WISE and optical images of the same field, aligned on the SPHEREx image, and blinks the three.
 - **Real images.** Averages of real SPHEREx exposures. Nothing is animated or amplified; missing pixels stay black.
 - **Read live.** For any position, the browser finds the exposures that cover it, reads a small window of each from NASA's public bucket and stacks them while you watch (about 170 exposures, 50 MB, one minute).
 - **One map, three scales.** The Solar System (Sun, Earth, planets, 7,083 asteroids and comets where SPHEREx saw them), the Milky Way (15,739 dwarfs typed by SPHEREx, the candidates, 382 unchecked sources) and 43,463 galaxies at their redshift distance.
-- **A review queue.** 382 red, moving WISE sources nobody has examined in SPHEREx. You look, you vote, you see the measurement. Votes stay in your browser.
+- **A review queue.** 382 red, moving WISE sources nobody has examined in SPHEREx. You look, you vote, you see the measurement and what other visitors said. Votes are counted for everyone, with no name and no account.
 - **A printable candidate sheet**, and a 3D view of each object, labelled as an illustration.
 
 ## Run it
@@ -75,6 +76,7 @@ The sources listed are **candidates**. The type comes from stacked, low-resoluti
 | Path | Role |
 |---|---|
 | `app/` | The application (Vite, React, three.js) |
+| `app/api/votes.js` | The only server code: counts the votes of the review queue (Upstash Redis on Vercel) |
 | `app/src/spherex/` | Reading SPHEREx images by byte ranges, WCS, stacking, quick photometry, index |
 | `app/src/reactbits/` | Animated interface components taken from React Bits (reactbits.dev), under their own licence |
 | `app/validate.mjs` | Comparison of the JavaScript reader with the reference measurements |

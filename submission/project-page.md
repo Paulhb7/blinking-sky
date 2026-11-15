@@ -156,9 +156,9 @@ The visitor zooms from one scale to the next without leaving the map.
 
 - Honest images. The pictures are averages of real exposures. The round bodies drawn next to them are illustrations built from the measurements, and are labelled “not an image”.
 - Honest words. Every source is called a candidate. “No publication found” means absent from the catalogues and lists we searched, not “unknown”.
-- Privacy. Nothing a visitor does is sent anywhere; votes stay in their browser.
+- Privacy. Two things leave the page, and only when the visitor asks: a sky position, to load other surveys, and a vote on an unchecked source, with no name and no account.
 - Access. Each object costs a few megabytes to load, in English, with a guided introduction.
-- Limits, stated in the tool. The difference image and the brightness at each date are quick looks made in the browser, not final photometry. SPHEREx pixels are 6.15″ wide, so only the fastest neighbours move visibly between two passes; for most candidates the evidence is the colour blink and the motion comes from WISE. The test is reliable to W2 ≈ 15.2, works about one time in two down to W2 = 16.0, and does not work in the Galactic plane. Votes are not collected yet.
+- Limits, stated in the tool. The difference image and the brightness at each date are quick looks made in the browser, not final photometry. SPHEREx pixels are 6.15″ wide, so only the fastest neighbours move visibly between two passes; for most candidates the evidence is the colour blink and the motion comes from WISE. The test is reliable to W2 ≈ 15.2, works about one time in two down to W2 = 16.0, and does not work in the Galactic plane. Votes are counted since the last day of the event, so few have been cast.
 
 ---
 

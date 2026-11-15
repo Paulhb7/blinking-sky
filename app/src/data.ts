@@ -257,3 +257,19 @@ export async function surveyFrames(ra: number, dec: number, sizeArcsec: number, 
   const optical = legacy ?? (dec > -30 ? await one(SURVEYS[2]) : null);
   return [wise, optical].filter((f): f is SpxFrame => f !== null);
 }
+
+/** Shared votes: what all visitors said of one source of the queue. A vote is sent with a random number kept in this
+ * browser, so that one visitor counts once per source; no name and no account. */
+export type SharedVotes = { counts: Record<Vote, number>; total: number };
+const CLIENT_KEY = "blinking-sky.client.v1";
+function clientId() {
+  try {
+    let id = localStorage.getItem(CLIENT_KEY);
+    if (!id) { id = crypto.randomUUID(); localStorage.setItem(CLIENT_KEY, id); }
+    return id;
+  } catch { return crypto.randomUUID(); }
+}
+const shared = async (response: Response): Promise<SharedVotes | null> => { if (!response.ok) return null; const body = await response.json(); return body && body.counts ? { counts: body.counts, total: body.total } : null; };
+export const fetchSharedVotes = (id: string): Promise<SharedVotes | null> => fetch(`/api/votes?id=${encodeURIComponent(id)}`).then(shared).catch(() => null);
+export const sendSharedVote = (id: string, vote: Vote): Promise<SharedVotes | null> =>
+  fetch("/api/votes", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ id, vote, client: clientId() }) }).then(shared).catch(() => null);

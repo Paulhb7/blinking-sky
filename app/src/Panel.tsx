@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { createPortal } from "react-dom";
 import { Link, Pause, Play, Printer, ScanLine, X } from "lucide-react";
-import { VOTES, dayLabel, expectedShift, mjdLabel, sexagesimal, type FrameKind, type SpxCatalog, type SpxFrame, type SpxTarget, type Vote } from "./data";
+import { VOTES, dayLabel, expectedShift, mjdLabel, sexagesimal, type FrameKind, type SharedVotes, type SpxCatalog, type SpxFrame, type SpxTarget, type Vote } from "./data";
 import { FIELD_CHOICES, type FieldArcmin } from "./live";
 import DecryptedText from "./reactbits/DecryptedText";
 import "./panel.css";
@@ -146,6 +146,8 @@ type Props = {
   field?: FieldArcmin; onField?: (field: FieldArcmin) => void;
   /** Asks for the same patch in other surveys; the state says whether they are being loaded or absent. */
   onSurveys?: () => void; surveys?: "idle" | "loading" | "none";
+  /** For a source of the queue: what all visitors said of it. */
+  shared?: SharedVotes;
 };
 const FIELD_COST: Record<FieldArcmin, string> = { 2: "0.3", 4: "0.5", 8: "1" };
 
@@ -156,7 +158,7 @@ function CopyLink() {
   return <button type="button" className="spx-btn" onClick={copy} title="Copy a link that opens this position"><Link size={12} /> {copied ? "Link copied" : "Copy link"}</button>;
 }
 
-export default function SpherexPanel({ target, catalog, view, ready, error, vote, onView, onClose, onRecenter, onRetry, onVote, onMore, onNext, onReplay, field, onField, onSurveys, surveys }: Props) {
+export default function SpherexPanel({ target, catalog, view, ready, error, vote, onView, onClose, onRecenter, onRetry, onVote, onMore, onNext, onReplay, field, onField, onSurveys, surveys, shared }: Props) {
   const [sheet, setSheet] = useState(false);
   const d = target.dwarf;
   const kinds = (["date", "colour", "survey"] as const).filter((k) => target.frames.some((f) => f.kind === k));
@@ -218,10 +220,14 @@ export default function SpherexPanel({ target, catalog, view, ready, error, vote
 
       {(target.group === "queue" || target.group === "position") && target.frames.length > 0 && <section className="spx-card spx-vote">
         <h3>What do you see?</h3>
-        <p className="spx-hint">Blink the two colours, then say what the source at the centre does. Your answer stays in this browser.</p>
+        <p className="spx-hint">Blink the two colours, then say what the source at the centre does. {target.group === "queue" ? "Your answer is counted with those of other visitors, with no name and no account." : "Your answer stays in this browser."}</p>
         <div className="spx-votes">{VOTES.map((v) => <button key={v.id} type="button" aria-pressed={vote === v.id} title={v.hint} onClick={() => onVote(v.id)}>{v.label}</button>)}</div>
         {vote === "fades" && d && d.dip !== "none" && d.snr >= 5 && <p className="spx-found"><b>{target.group === "queue" ? "You may be the first person to see this." : "The measurement agrees with you."}</b> Quick-look methane index {fmt(d.R)} ± {fmt(d.eR)}. It is a candidate, not a confirmation{target.group === "queue" ? "" : ", and a free position may already be known"}: open its sheet for what to check next.</p>}
         {vote === "fades" && d && (d.dip === "none" || !(d.snr >= 5)) && <p className="spx-note">The quick look does not see a methane dip here{d.snr >= 5 ? ` (index ${fmt(d.R)} ± ${fmt(d.eR)})` : ": the source is too faint to measure"}. Your eye may still be right: it stays in your list.</p>}
+        {target.group === "queue" && shared && <div className="spx-shared" aria-label="Votes of all visitors">
+          <p className="spx-light-title">{shared.total === 0 ? "Nobody has voted on this source yet: you would be the first." : `${shared.total} visitor${shared.total > 1 ? "s have" : " has"} looked at this source`}</p>
+          {shared.total > 0 && VOTES.filter((v) => shared.counts[v.id] > 0).map((v) => <div key={v.id} className="spx-light-row"><span>{v.label}</span><i><b style={{ width: `${shared.counts[v.id] / shared.total * 100}%` }} /></i><span>{shared.counts[v.id]}</span></div>)}
+        </div>}
         {vote && onNext && <button type="button" className="spx-btn primary" onClick={onNext}>Next unchecked source →</button>}
       </section>}
 

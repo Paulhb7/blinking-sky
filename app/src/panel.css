@@ -118,3 +118,7 @@
 .spx-light-row i { height: 8px; border-radius: 4px; background: rgb(255 255 255 / 0.08); overflow: hidden; }
 .spx-light-row b { display: block; height: 100%; border-radius: 4px; background: #5ef2ff; }
 .spx-light-row span:last-child { text-align: right; }
+
+/* What all visitors said of a source of the queue. */
+.spx-shared { display: grid; gap: 5px; margin: 10px 0 6px; }
+.spx-shared .spx-light-row { grid-template-columns: 110px 1fr 28px; }
