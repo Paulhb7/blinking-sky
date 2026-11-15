@@ -269,3 +269,5 @@ body { background: #02060b; }
 .community-empty { padding: 26px; border: 1px dashed var(--line); border-radius: 14px; color: var(--dim); font-size: 14px; }
 .community-page .home-foot { margin-top: auto; }
 @media (max-width: 760px) { .community-stats, .community-cols { grid-template-columns: 1fr; } }
+
+.community-demo { align-self: flex-start; padding: 7px 14px; border: 1px solid #ffb454; border-radius: 99px; background: rgb(255 180 84 / 0.14); color: #ffd9a3; font: 12px var(--font-geist-mono); letter-spacing: 0.1em; text-transform: uppercase; }

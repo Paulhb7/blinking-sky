@@ -278,3 +278,16 @@ export const sendSharedVote = (id: string, vote: Vote): Promise<SharedVotes | nu
 export type Community = { votes: number; sources: number; latest: { id: string; vote: Vote; at: number }[] };
 export const fetchCommunity = (): Promise<Community | null> => fetch("/api/votes").then(async (r) => { if (!r.ok) return null; const b = await r.json(); return typeof b.votes === "number" ? { votes: b.votes, sources: b.sources, latest: b.latest ?? [] } : null; }).catch(() => null);
 export const fetchCommunitySources = (): Promise<({ id: string } & SharedVotes)[]> => fetch("/api/votes?all=1").then(async (r) => { if (!r.ok) return []; const b = await r.json(); return Array.isArray(b.sources) ? b.sources : []; }).catch(() => []);
+
+/** Votes cast in this browser that the shared count may not have received (cast offline, or before votes were shared):
+ * each is sent once. The server keeps one vote per browser and per source, so sending again changes nothing. */
+const SENT_KEY = "blinking-sky.sent.v1";
+export async function resendLocalVotes(queueIds: Set<string>) {
+  let sent: string[] = [];
+  try { sent = JSON.parse(localStorage.getItem(SENT_KEY) ?? "[]"); } catch { /* storage blocked */ }
+  const votes = readVotes(), todo = Object.keys(votes).filter((id) => queueIds.has(id) && !sent.includes(id));
+  for (const id of todo.slice(0, 30)) { if (await sendSharedVote(id, votes[id].vote)) sent.push(id); }
+  try { localStorage.setItem(SENT_KEY, JSON.stringify(sent)); } catch { /* storage blocked */ }
+  return todo.length;
+}
+export function markVoteSent(id: string) { try { const sent: string[] = JSON.parse(localStorage.getItem(SENT_KEY) ?? "[]"); if (!sent.includes(id)) localStorage.setItem(SENT_KEY, JSON.stringify([...sent, id])); } catch { /* storage blocked */ } }

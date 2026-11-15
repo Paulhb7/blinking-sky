@@ -7,7 +7,7 @@ import CountUp from "./reactbits/CountUp";
 import GradientText from "./reactbits/GradientText";
 import Panel, { type SpherexView } from "./Panel";
 import Slides, { type Director } from "./deck/Slides";
-import { GROUPS, VARIABLES, differenceImage, surveyFrames, fetchSharedVotes, sendSharedVote, type SharedVotes, type FrameKind, type SpxFrame, loadQueue, loadSolar, loadSolarFrames, loadSpherexCatalog, readVotes, sexagesimal, writeVote, type QueueSource, type SolarData, type SpxCatalog, type SpxTarget, type Vote } from "./data";
+import { GROUPS, VARIABLES, differenceImage, surveyFrames, fetchSharedVotes, sendSharedVote, resendLocalVotes, markVoteSent, type SharedVotes, type FrameKind, type SpxFrame, loadQueue, loadSolar, loadSolarFrames, loadSpherexCatalog, readVotes, sexagesimal, writeVote, type QueueSource, type SolarData, type SpxCatalog, type SpxTarget, type Vote } from "./data";
 import CommunityPage from "./Community";
 import { DEFAULT_FIELD, startLive, startMover, type FieldArcmin, type LiveInput } from "./live";
 import { Sky, TELESCOPE_FOV, type Marker } from "./sky/Sky";
@@ -90,6 +90,8 @@ export default function App() {
     differenceImage(firstDate.image, lastDate.image).then((image) => { if (!stale) setDiff({ id: base.id, first: firstDate.image, last: lastDate.image, image, label: `Difference · ${lastDate.label} minus ${firstDate.label}` }); }).catch(() => {});
     return () => { stale = true; };
   }, [base?.id, firstDate?.image, lastDate?.image]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Votes cast here before they were shared, or while offline, join the shared count once.
+  useEffect(() => { if (queue.length) resendLocalVotes(new Set(queue.map((q) => q.id))); }, [queue]);
   // A source of the queue opens with the votes of the other visitors.
   useEffect(() => {
     if (base?.group !== "queue") return;
@@ -486,7 +488,7 @@ export default function App() {
         onRecenter={() => sky.current?.flyTo(target.geometry?.centerRaDeg ?? target.ra, target.geometry?.centerDecDeg ?? target.dec, fovOf(target), 1.2)} onRetry={() => {}}
         field={target.live && !target.solar ? fieldArcmin : undefined} onField={changeField}
         onSurveys={loadSurveys} surveys={surveyState}
-        onVote={(vote: Vote) => { setVotes(writeVote(target, vote)); if (target.group === "queue") sendSharedVote(target.id, vote).then((s) => { if (s) setSharedVotes((all) => ({ ...all, [target.id]: s })); }); }} shared={target.group === "queue" ? sharedVotes[target.id] : undefined} onMore={live.current ? () => live.current?.more() : undefined} onNext={target.group === "queue" ? nextUnchecked : undefined}
+        onVote={(vote: Vote) => { setVotes(writeVote(target, vote)); if (target.group === "queue") sendSharedVote(target.id, vote).then((s) => { if (s) { markVoteSent(target.id); setSharedVotes((all) => ({ ...all, [target.id]: s })); } }); }} shared={target.group === "queue" ? sharedVotes[target.id] : undefined} onMore={live.current ? () => live.current?.more() : undefined} onNext={target.group === "queue" ? nextUnchecked : undefined}
         onReplay={target.group === "unpublished" && !target.live ? () => replay(target) : undefined} />}
     </div>
   );

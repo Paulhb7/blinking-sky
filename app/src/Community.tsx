@@ -8,15 +8,26 @@ const label = (vote: Vote) => VOTES.find((x) => x.id === vote)?.label ?? vote;
 
 /** The community page: what the visitors of the review queue have said so far. Inspired by Backyard Worlds: Planet 9,
  * where many volunteers look at the same sources and their agreement is the result. */
+/** Sample votes for a demonstration (?community&demo): made up here, never sent, and labelled as such on the page. */
+function demoData(queue: QueueSource[]): { data: Community; sources: ({ id: string } & SharedVotes)[] } {
+  const pattern: Vote[][] = [["fades", "fades", "fades", "stays"], ["stays", "stays", "stays"], ["fades", "fades"], ["nothing", "nothing", "stays"], ["blend", "stays"], ["stays", "stays"], ["fades", "blend", "fades"], ["nothing"], ["artefact", "stays"], ["stays"]];
+  const picked = queue.filter((_, i) => i % 37 === 5).slice(0, pattern.length), now = Date.now();
+  const sources = picked.map((q, i) => { const counts = Object.fromEntries(VOTES.map((v) => [v.id, 0])) as Record<Vote, number>; for (const v of pattern[i]) counts[v] += 1; return { id: q.id, counts, total: pattern[i].length }; });
+  const latest = picked.flatMap((q, i) => pattern[i].map((vote, k) => ({ id: q.id, vote, at: now - (4 + ((i * 7 + k * 13) % 23) * 9) * 60000 }))).sort((a, b) => b.at - a.at);
+  return { data: { votes: latest.length, sources: sources.length, latest }, sources };
+}
+
 export default function CommunityPage({ queue, onOpen, onBack, onVote }: { queue: QueueSource[]; onOpen: (source: QueueSource) => void; onBack: () => void; onVote: () => void }) {
+  const demo = useMemo(() => new URLSearchParams(window.location.search).has("demo"), []);
   const [data, setData] = useState<Community | null | undefined>(undefined);
   const [sources, setSources] = useState<({ id: string } & SharedVotes)[]>([]);
   useEffect(() => {
+    if (demo) { if (queue.length) { const d = demoData(queue); setData(d.data); setSources(d.sources); } return; }
     let stale = false;
     fetchCommunity().then((c) => { if (!stale) setData(c); });
     fetchCommunitySources().then((s) => { if (!stale) setSources(s); });
     return () => { stale = true; };
-  }, []);
+  }, [demo, queue]);
   const total = queue.length || 382;
   // A source "fades" for the community when most of its voters said so.
   const fading = useMemo(() => sources.filter((s) => s.counts.fades > 0 && s.counts.fades * 2 >= s.total), [sources]);
@@ -34,6 +45,7 @@ export default function CommunityPage({ queue, onOpen, onBack, onVote }: { queue
         <button type="button" className="home-cta" onClick={onVote}>Vote on a source nobody has checked <ArrowRight size={16} /></button>
       </section>
       {data === undefined ? <p className="community-empty">Loading the votes…</p> : data === null ? <p className="community-empty">The votes cannot be reached right now.</p> : <>
+        {demo && <p className="community-demo">Demo data · sample votes shown for illustration, not real visitors</p>}
         <section className="community-stats" aria-label="Totals">
           <div><b>{data.votes.toLocaleString("en-GB")}</b><span>vote{data.votes === 1 ? "" : "s"} cast</span></div>
           <div><b>{data.sources.toLocaleString("en-GB")}<small> / {total}</small></b><span>sources looked at</span><i><em style={{ width: `${Math.min(100, data.sources / total * 100)}%` }} /></i></div>
