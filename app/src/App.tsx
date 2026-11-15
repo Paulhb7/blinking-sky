@@ -7,7 +7,7 @@ import CountUp from "./reactbits/CountUp";
 import GradientText from "./reactbits/GradientText";
 import Panel, { type SpherexView } from "./Panel";
 import Slides, { type Director } from "./deck/Slides";
-import { GROUPS, VARIABLES, differenceImage, loadQueue, loadSolar, loadSolarFrames, loadSpherexCatalog, readVotes, sexagesimal, writeVote, type QueueSource, type SolarData, type SpxCatalog, type SpxTarget, type Vote } from "./data";
+import { GROUPS, VARIABLES, differenceImage, surveyFrames, type FrameKind, type SpxFrame, loadQueue, loadSolar, loadSolarFrames, loadSpherexCatalog, readVotes, sexagesimal, writeVote, type QueueSource, type SolarData, type SpxCatalog, type SpxTarget, type Vote } from "./data";
 import { DEFAULT_FIELD, startLive, startMover, type FieldArcmin, type LiveInput } from "./live";
 import { Sky, TELESCOPE_FOV, type Marker } from "./sky/Sky";
 import { photometricDistance, setRelation, type GalaxyObject, type SolarBody } from "./sky/galaxy";
@@ -16,7 +16,7 @@ import { temperatureOf, type PortraitLook } from "./sky/portrait";
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 const VIEW: SpherexView = { kind: "date", frame: 0, playing: false, flagged: false, opacity: 1, pixelBox: true };
 const shortName = (name: string) => name.replace(/^CWISE J(\d{4})\d{2}\.\d+([+-]\d{4})\d{2}\.\d$/, "J$1$2").replace("-", "−");
-const firstFrame = (t: SpxTarget, kind: "date" | "colour") => Math.max(0, t.frames.findIndex((f) => f.kind === kind));
+const firstFrame = (t: SpxTarget, kind: FrameKind) => Math.max(0, t.frames.findIndex((f) => f.kind === kind));
 const defaultKind = (t: SpxTarget): "date" | "colour" => (t.motion && t.motion.total > 2 && t.frames.some((f) => f.kind === "date")) || !t.frames.some((f) => f.kind === "colour") ? "date" : "colour";
 // The three bodies prepared in advance, under their id on the Solar System map.
 const PREPARED_BODY: Record<string, string> = { "29P": "sb-29P", pallas: "sb-2", euphrosyne: "sb-31" };
@@ -87,8 +87,34 @@ export default function App() {
     differenceImage(firstDate.image, lastDate.image).then((image) => { if (!stale) setDiff({ id: base.id, first: firstDate.image, last: lastDate.image, image, label: `Difference · ${lastDate.label} minus ${firstDate.label}` }); }).catch(() => {});
     return () => { stale = true; };
   }, [base?.id, firstDate?.image, lastDate?.image]); // eslint-disable-line react-hooks/exhaustive-deps
-  const target = useMemo(() => base && diff && diff.id === base.id && diff.first === firstDate?.image && diff.last === lastDate?.image
-    ? { ...base, frames: [...base.frames, { id: "diff", kind: "date" as const, label: diff.label, image: diff.image, images: 0 }] } : base, [base, diff, firstDate?.image, lastDate?.image]);
+  // The same patch in other surveys, asked for by the visitor: WISE and an optical survey, on the grid of the SPHEREx frame.
+  const [surveys, setSurveys] = useState<{ id: string; size: number; frames: SpxFrame[] } | null>(null);
+  const [surveyState, setSurveyState] = useState<"idle" | "loading" | "none">("idle");
+  const fieldSize = base?.geometry ? base.geometry.width * base.geometry.gridPixelArcsec : 0;
+  useEffect(() => { setSurveyState("idle"); }, [base?.id, fieldSize]);
+  const loadSurveys = useCallback(() => {
+    const g = base?.geometry; if (!base || !g) return;
+    const id = base.id, size = g.width * g.gridPixelArcsec;
+    setSurveyState("loading");
+    surveyFrames(g.centerRaDeg, g.centerDecDeg, size).then((frames) => {
+      if (selectedRef.current !== id) return;
+      if (!frames.length) { setSurveyState("none"); return; }
+      setSurveys({ id, size, frames }); setSurveyState("idle"); autoKind.current = false;
+      setView((v) => ({ ...v, kind: "survey", frame: -1, playing: true }));
+    });
+  }, [base]);
+  const target = useMemo(() => {
+    if (!base) return base;
+    const frames = [...base.frames];
+    if (diff && diff.id === base.id && diff.first === firstDate?.image && diff.last === lastDate?.image) frames.push({ id: "diff", kind: "date" as const, label: diff.label, image: diff.image, images: 0 });
+    if (surveys && surveys.id === base.id && Math.abs(surveys.size - fieldSize) < 0.5) {
+      // SPHEREx first, so the blink goes from the SPHEREx image to the other surveys and back.
+      const ours = base.frames.find((f) => f.id === "lw") ?? base.frames.find((f) => f.kind === "date");
+      if (ours) frames.push({ ...ours, id: "survey-spherex", kind: "survey" as const, label: "SPHEREx", caption: `SPHEREx, ${ours.band ? `${ours.band[0]}–${ours.band[1]} µm` : "this field"}: the image built here from NASA's archive.` });
+      frames.push(...surveys.frames);
+    }
+    return frames.length === base.frames.length ? base : { ...base, frames };
+  }, [base, diff, firstDate?.image, lastDate?.image, surveys, fieldSize]);
 
   useEffect(() => {
     if (!host.current) return;
@@ -277,7 +303,7 @@ export default function App() {
       if (enough) { autoKind.current = false; const kind = variable ? "date" as const : "colour" as const; setView((v) => ({ ...v, kind, frame: firstFrame(target, kind), playing: true })); return; }
     }
     setView((v) => {
-      const has = (k: "date" | "colour") => target.frames.some((f) => f.kind === k);
+      const has = (k: FrameKind) => target.frames.some((f) => f.kind === k);
       let kind = v.kind;
       if (!has(kind)) kind = has("colour") && !target.live ? "colour" : has("date") ? "date" : "colour";
       const frame = target.frames[v.frame]?.kind === kind ? v.frame : firstFrame(target, kind);
@@ -301,7 +327,7 @@ export default function App() {
     if (!target || !frame || !target.geometry) { s.setFrame(null); return; }
     const g = target.geometry;
     s.setFrame({ ra: g.centerRaDeg, dec: g.centerDecDeg, sizeArcsec: g.width * g.gridPixelArcsec, mark: frame.at ? [(frame.at[0] + 0.5) / g.width, (frame.at[1] + 0.5) / g.height] : undefined, image: view.flagged && frame.flagged ? frame.flagged : frame.image,
-      label: `${shortName(target.name)} · SPHEREx ${frame.kind === "date" ? frame.label : frame.label.split(" · ")[0]}${frame.images > 1 ? ` · ${frame.images} exposures` : ""}` });
+      label: frame.kind === "survey" ? `${shortName(target.name)} · ${frame.label}` : `${shortName(target.name)} · SPHEREx ${frame.kind === "date" ? frame.label : frame.label.split(" · ")[0]}${frame.images > 1 ? ` · ${frame.images} exposures` : ""}` });
   }, [target?.id, target?.geometry?.centerRaDeg, frame?.image, frame?.flagged, view.flagged, frame?.label, frame?.images]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { sky.current?.setFrameOpacity(view.opacity); }, [view.opacity]);
   // With a Solar System body open, the planets on the map are shown at the day SPHEREx saw it; else today.
@@ -407,7 +433,7 @@ export default function App() {
           <button type="button" onClick={() => sky.current?.wide()}>Wide sky</button>
         </div>
         <div className="left-links"><button type="button" onClick={() => setScreen("home")}>← Home</button><button type="button" onClick={() => { setGuide(0); sky.current?.goLevel("galaxy"); }}>How it works</button><button type="button" onClick={() => setPresenting("full")}>Presentation · P</button></div>
-        <p className="fine">In the galaxy: drag to turn, scroll to zoom, click a dot to fly to it. At the telescope: real SPHEREx exposures, read from NASA&apos;s archive. The galaxy&apos;s shape is a model; distances marked estimated or assumed are not measurements. Data: NASA/JPL-Caltech/SPHEREx · NASA/IPAC IRSA · Gagné et al. 2026 · Gaia DR3 · CatWISE2020. Nothing you do here is sent anywhere.</p>
+        <p className="fine">In the galaxy: drag to turn, scroll to zoom, click a dot to fly to it. At the telescope: real SPHEREx exposures, read from NASA&apos;s archive. The galaxy&apos;s shape is a model; distances marked estimated or assumed are not measurements. Data: NASA/JPL-Caltech/SPHEREx · NASA/IPAC IRSA · Gagné et al. 2026 · Gaia DR3 · CatWISE2020. Nothing you do here is sent anywhere, except a sky position to legacysurvey.org if you ask for other surveys.</p>
       </aside>
       <p className="where">{where}</p>
       {screen === "sky" && <nav className="levels glass" aria-label="Scale">
@@ -446,6 +472,7 @@ export default function App() {
         onView={(next) => { if (next.kind) autoKind.current = false; setView((v) => ({ ...v, ...next })); }} onClose={() => setPanel(false)}
         onRecenter={() => sky.current?.flyTo(target.geometry?.centerRaDeg ?? target.ra, target.geometry?.centerDecDeg ?? target.dec, fovOf(target), 1.2)} onRetry={() => {}}
         field={target.live && !target.solar ? fieldArcmin : undefined} onField={changeField}
+        onSurveys={loadSurveys} surveys={surveyState}
         onVote={(vote: Vote) => setVotes(writeVote(target, vote))} onMore={live.current ? () => live.current?.more() : undefined} onNext={target.group === "queue" ? nextUnchecked : undefined}
         onReplay={target.group === "unpublished" && !target.live ? () => replay(target) : undefined} />}
     </div>

@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { createPortal } from "react-dom";
 import { Link, Pause, Play, Printer, ScanLine, X } from "lucide-react";
-import { VOTES, dayLabel, expectedShift, mjdLabel, sexagesimal, type SpxCatalog, type SpxFrame, type SpxTarget, type Vote } from "./data";
+import { VOTES, dayLabel, expectedShift, mjdLabel, sexagesimal, type FrameKind, type SpxCatalog, type SpxFrame, type SpxTarget, type Vote } from "./data";
 import { FIELD_CHOICES, type FieldArcmin } from "./live";
 import DecryptedText from "./reactbits/DecryptedText";
 import "./panel.css";
 
-export type SpherexView = { kind: "date" | "colour"; frame: number; playing: boolean; flagged: boolean; opacity: number; pixelBox: boolean };
+export type SpherexView = { kind: FrameKind; frame: number; playing: boolean; flagged: boolean; opacity: number; pixelBox: boolean };
 
 const CHIP: Record<string, [string, string]> = {
   start: ["Known object", "known"], unpublished: ["Candidate · not confirmed", "cand"], blind: ["Blind test · already typed", "known"],
@@ -15,7 +15,7 @@ const CHIP: Record<string, [string, string]> = {
 };
 const monthLabel = (mjd: number) => new Date((mjd - 40587) * 86400000).toLocaleDateString("en-GB", { month: "short", year: "numeric", timeZone: "UTC" });
 const fmt = (v: number | null | undefined, n = 2) => v === null || v === undefined || !Number.isFinite(v) ? "—" : v.toFixed(n);
-const frameCaption = (f: SpxFrame) => f.id === "diff" ? "Last date minus first date. White: brighter, or arrived. Black: fainter, or left. Grey: no change." : f.kind === "date"
+const frameCaption = (f: SpxFrame) => f.caption ? f.caption : f.id === "diff" ? "Last date minus first date. White: brighter, or arrived. Black: fainter, or left. Grey: no change." : f.kind === "date"
   ? `${f.images === 1 ? "Single exposure" : `${f.images} exposures averaged`}${f.dateRange ? ` · ${dayLabel(f.dateRange[0])} to ${dayLabel(f.dateRange[1])}` : ""}${f.band ? ` · ${f.band[0]}–${f.band[1]} µm` : ""}`
   : `${f.images} exposures averaged · all dates · ${f.band ? `${f.band[0]}–${f.band[1]} µm` : ""}`;
 
@@ -144,6 +144,8 @@ type Props = {
   onVote: (vote: Vote) => void; onMore?: () => void; onNext?: () => void; onReplay?: () => void;
   /** Width of the field read live, arcminutes, when the visitor can change it. */
   field?: FieldArcmin; onField?: (field: FieldArcmin) => void;
+  /** Asks for the same patch in other surveys; the state says whether they are being loaded or absent. */
+  onSurveys?: () => void; surveys?: "idle" | "loading" | "none";
 };
 const FIELD_COST: Record<FieldArcmin, string> = { 2: "0.3", 4: "0.5", 8: "1" };
 
@@ -154,10 +156,10 @@ function CopyLink() {
   return <button type="button" className="spx-btn" onClick={copy} title="Copy a link that opens this position"><Link size={12} /> {copied ? "Link copied" : "Copy link"}</button>;
 }
 
-export default function SpherexPanel({ target, catalog, view, ready, error, vote, onView, onClose, onRecenter, onRetry, onVote, onMore, onNext, onReplay, field, onField }: Props) {
+export default function SpherexPanel({ target, catalog, view, ready, error, vote, onView, onClose, onRecenter, onRetry, onVote, onMore, onNext, onReplay, field, onField, onSurveys, surveys }: Props) {
   const [sheet, setSheet] = useState(false);
   const d = target.dwarf;
-  const kinds = (["date", "colour"] as const).filter((k) => target.frames.some((f) => f.kind === k));
+  const kinds = (["date", "colour", "survey"] as const).filter((k) => target.frames.some((f) => f.kind === k));
   const frames = target.frames.map((f, index) => ({ f, index })).filter(({ f }) => f.kind === view.kind);
   const current = target.frames[view.frame];
   const shift = expectedShift(target);
@@ -184,9 +186,10 @@ export default function SpherexPanel({ target, catalog, view, ready, error, vote
 
       {target.frames.length > 0 ? <section className="spx-card">
         <div className="spx-tabs" role="tablist" aria-label="What changes between frames">
-          {kinds.map((k) => <button key={k} type="button" role="tab" aria-selected={view.kind === k} onClick={() => onView({ kind: k, frame: target.frames.findIndex((f) => f.kind === k), playing: false })}>{k === "date" ? "Across dates" : "Across colours"}</button>)}
+          {kinds.map((k) => <button key={k} type="button" role="tab" aria-selected={view.kind === k} onClick={() => onView({ kind: k, frame: target.frames.findIndex((f) => f.kind === k), playing: false })}>{k === "date" ? "Across dates" : k === "colour" ? "Across colours" : "Other surveys"}</button>)}
+          {onSurveys && !kinds.includes("survey") && target.geometry && !target.solar && <button type="button" role="tab" aria-selected={false} disabled={surveys === "loading"} onClick={onSurveys} title="Loads WISE and optical images of this position from legacysurvey.org">{surveys === "loading" ? "Loading…" : surveys === "none" ? "No other survey here" : "+ Other surveys"}</button>}
         </div>
-        <p className="spx-hint">{view.kind === "date" ? "Same colour, different dates, fixed sky grid: what changes moved or varied." : "Same sky, two colours, all dates averaged. The view follows the target. A methane dwarf fades in the methane band; ordinary stars stay."}</p>
+        <p className="spx-hint">{view.kind === "survey" ? "The same patch of sky in SPHEREx and in other surveys: same centre, same width, north up. Blink them. The other images come from legacysurvey.org, which was sent this position." : view.kind === "date" ? "Same colour, different dates, fixed sky grid: what changes moved or varied." : "Same sky, two colours, all dates averaged. The view follows the target. A methane dwarf fades in the methane band; ordinary stars stay."}</p>
         <div className="spx-frames">
           {frames.map(({ f, index }) => (
             <button key={f.id} type="button" aria-pressed={view.frame === index} onClick={() => onView({ frame: index, playing: false })}>

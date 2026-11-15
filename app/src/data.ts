@@ -4,8 +4,11 @@ export type SpxGeometry = {
   system: string; centerRaDeg: number; centerDecDeg: number; width: number; height: number;
   gridPixelArcsec: number; nativePixelArcsec: number; referencePixelZeroBased: [number, number];
 };
+export type FrameKind = "date" | "colour" | "survey";
 export type SpxFrame = {
-  id: string; kind: "date" | "colour"; label: string; image: string; flagged?: string;
+  id: string; kind: FrameKind; label: string; image: string; flagged?: string;
+  /** For a frame from another survey: what it is and when it was taken, in one line. */
+  caption?: string;
   /** Number of exposures averaged in this frame (1 for a single exposure). */
   images: number; band?: [number, number]; date?: string; dateRange?: [string, string];
   /** Where the moving body is in this frame: column and row on the grid. */
@@ -220,4 +223,37 @@ export async function differenceImage(first: string, last: string): Promise<stri
   }
   ctx.putImageData(data, 0, 0);
   return out.toDataURL("image/png");
+}
+
+/** The same patch of sky in other surveys, on the grid of the SPHEREx frame: same centre, same width, north up.
+ * The cut-outs come from the Legacy Surveys viewer (legacysurvey.org), which receives the position. A layer that
+ * does not cover the position comes back empty and is dropped. */
+const SURVEYS: { id: string; layer: string; label: string; caption: string; gain: number }[] = [
+  { id: "wise", layer: "unwise-neo7", label: "WISE", caption: "WISE, 3.4 and 4.6 µm (unWISE coadd of 2010–2020). Red here means brighter at 4.6 µm. A nearby object is not where it is today.", gain: 1.7 },
+  { id: "legacy", layer: "ls-dr10", label: "Optical", caption: "Visible and near-infrared light, g, r, i, z (DESI Legacy Imaging Surveys DR10). A cold brown dwarf is faint or absent here.", gain: 1.25 },
+  { id: "ps1", layer: "ps1", label: "Optical", caption: "Visible light, g, r, i (Pan-STARRS DR1). A cold brown dwarf is faint or absent here.", gain: 1.1 },
+];
+export async function surveyFrames(ra: number, dec: number, sizeArcsec: number, signal?: AbortSignal): Promise<SpxFrame[]> {
+  const pixels = 320, scale = sizeArcsec / pixels;
+  const one = async (sv: typeof SURVEYS[number]): Promise<SpxFrame | null> => {
+    try {
+      const url = `https://www.legacysurvey.org/viewer/cutout.jpg?ra=${ra.toFixed(6)}&dec=${dec.toFixed(6)}&layer=${sv.layer}&pixscale=${scale.toFixed(4)}&size=${pixels}`;
+      const blob = await (await fetch(url, { signal })).blob();
+      const bitmap = await createImageBitmap(blob);
+      const c = document.createElement("canvas"); c.width = c.height = pixels;
+      const ctx = c.getContext("2d")!; ctx.drawImage(bitmap, 0, 0, pixels, pixels);
+      const img = ctx.getImageData(0, 0, pixels, pixels), d = img.data;
+      // An empty cut-out is one flat colour: measure the spread before keeping it.
+      let sum = 0, sq = 0; for (let i = 0; i < d.length; i += 16) { const v = d[i] + d[i + 1] + d[i + 2]; sum += v; sq += v * v; }
+      const n = d.length / 16, spread = Math.sqrt(Math.max(0, sq / n - (sum / n) ** 2));
+      if (spread < 4) return null;
+      for (let i = 0; i < d.length; i += 4) { d[i] = Math.min(255, d[i] * sv.gain); d[i + 1] = Math.min(255, d[i + 1] * sv.gain); d[i + 2] = Math.min(255, d[i + 2] * sv.gain); }
+      ctx.putImageData(img, 0, 0);
+      return { id: `survey-${sv.id}`, kind: "survey", label: sv.label, caption: sv.caption, image: c.toDataURL("image/jpeg", 0.9), images: 0 };
+    } catch { return null; }
+  };
+  const [wise, legacy] = await Promise.all([one(SURVEYS[0]), one(SURVEYS[1])]);
+  // Pan-STARRS is slower: only asked where the Legacy Surveys have nothing.
+  const optical = legacy ?? (dec > -30 ? await one(SURVEYS[2]) : null);
+  return [wise, optical].filter((f): f is SpxFrame => f !== null);
 }
