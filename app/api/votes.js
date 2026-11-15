@@ -16,7 +16,16 @@ const tally = (values) => { const counts = Object.fromEntries(VOTES.map((v) => [
 
 export async function GET(request) {
   if (!URL_ || !TOKEN) return json({ error: "storage not configured" }, 503);
-  const id = new URL(request.url).searchParams.get("id");
+  const params = new URL(request.url).searchParams, id = params.get("id");
+  if (params.has("all")) {
+    // Every source that has at least one vote, with its counts: the community page.
+    try {
+      const [ids] = await redis([["SMEMBERS", "sources"]]);
+      const list = (ids ?? []).filter((x) => SOURCE.test(x)).slice(0, 400);
+      const values = list.length ? await redis(list.map((x) => ["HVALS", `v:${x}`])) : [];
+      return json({ sources: list.map((x, i) => ({ id: x, ...tally(values[i]) })).filter((x) => x.total > 0) });
+    } catch { return json({ error: "storage unavailable" }, 502); }
+  }
   try {
     if (!id) {
       // The whole picture: how many votes on how many sources, and the latest ones.

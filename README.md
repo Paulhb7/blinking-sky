@@ -56,7 +56,7 @@ Real SPHEREx images at 4 µm and in the methane band. These are candidates: none
 - **Read live.** For any position, the browser finds the exposures that cover it, reads a small window of each from NASA's public bucket and stacks them while you watch (about 170 exposures, 50 MB, one minute).
 - **One map, three scales.** The Solar System (Sun, Earth, planets, 7,083 asteroids and comets where SPHEREx saw them), the Milky Way (15,739 dwarfs typed by SPHEREx, the candidates, 382 unchecked sources) and 43,463 galaxies at their redshift distance.
 - **A review queue.** 382 red, moving WISE sources nobody has examined in SPHEREx. You look, you vote, you see the measurement and what other visitors said. Votes are counted for everyone, with no name and no account.
-- **Community votes.** As in Backyard Worlds, many eyes look at the same sources. A panel shows how many votes have been cast, on how many sources, and the latest ones; each opens its source.
+- **Community votes.** As in Backyard Worlds, many eyes look at the same sources. A dedicated page (`?community`) shows how many votes have been cast, on how many sources, the latest votes and the most looked-at sources; each opens its source.
 - **A printable candidate sheet**, and a 3D view of each object, labelled as an illustration.
 
 ## Run it

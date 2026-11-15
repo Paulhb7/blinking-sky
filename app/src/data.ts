@@ -277,3 +277,4 @@ export const sendSharedVote = (id: string, vote: Vote): Promise<SharedVotes | nu
 /** The whole community: how many votes on how many sources, and the latest ones. */
 export type Community = { votes: number; sources: number; latest: { id: string; vote: Vote; at: number }[] };
 export const fetchCommunity = (): Promise<Community | null> => fetch("/api/votes").then(async (r) => { if (!r.ok) return null; const b = await r.json(); return typeof b.votes === "number" ? { votes: b.votes, sources: b.sources, latest: b.latest ?? [] } : null; }).catch(() => null);
+export const fetchCommunitySources = (): Promise<({ id: string } & SharedVotes)[]> => fetch("/api/votes?all=1").then(async (r) => { if (!r.ok) return []; const b = await r.json(); return Array.isArray(b.sources) ? b.sources : []; }).catch(() => []);

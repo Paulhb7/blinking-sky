@@ -1,4 +1,4 @@
-import { ArrowRight, Eye, Layers, MousePointerClick, Presentation } from "lucide-react";
+import { ArrowRight, Eye, Layers, MousePointerClick, Presentation, Users } from "lucide-react";
 import BlurText from "./reactbits/BlurText";
 import CountUp from "./reactbits/CountUp";
 import GradientText from "./reactbits/GradientText";
@@ -8,7 +8,7 @@ import SpotlightCard from "./reactbits/SpotlightCard";
 import StarBorder from "./reactbits/StarBorder";
 
 /** The first screen: what this is, in one breath, over the live sky. */
-export default function Landing({ queueSize, images, onEnter, onUnchecked, onPresent }: { queueSize: number; images: string; onEnter: () => void; onUnchecked: () => void; onPresent: () => void }) {
+export default function Landing({ queueSize, images, onEnter, onUnchecked, onPresent, onCommunity }: { queueSize: number; images: string; onEnter: () => void; onUnchecked: () => void; onPresent: () => void; onCommunity: () => void }) {
   return (
     <main className="home">
       <div className="home-veil" aria-hidden="true" />
@@ -25,7 +25,7 @@ export default function Landing({ queueSize, images, onEnter, onUnchecked, onPre
           <Magnet padding={60} magnetStrength={5}><button type="button" className="home-cta" onClick={onEnter}>Open the sky <ArrowRight size={16} /></button></Magnet>
           <StarBorder as="button" type="button" className="home-star" color="#ffb454" duration={5} radius={999} backgroundColor="rgba(8, 10, 14, 0.82)" textColor="#ffd9a3" onClick={onUnchecked}>Show me one nobody has checked</StarBorder>
         </div>
-        <button type="button" className="home-link" onClick={onPresent}><Presentation size={13} /> Watch the two-minute story</button>
+        <div className="home-links"><button type="button" className="home-link" onClick={onCommunity}><Users size={13} /> Community votes</button><button type="button" className="home-link" onClick={onPresent}><Presentation size={13} /> Watch the two-minute story</button></div>
       </section>
       <section className="home-steps" aria-label="How it works">
         <SpotlightCard className="home-step" spotlightColor="rgba(94, 242, 255, 0.24)"><MousePointerClick size={18} /><h2>Pick a spot</h2><p>A known star, a candidate, any position, or let the tool hand you a source no one has examined.</p></SpotlightCard>

@@ -8,7 +8,7 @@ import GradientText from "./reactbits/GradientText";
 import Panel, { type SpherexView } from "./Panel";
 import Slides, { type Director } from "./deck/Slides";
 import { GROUPS, VARIABLES, differenceImage, surveyFrames, fetchSharedVotes, sendSharedVote, type SharedVotes, type FrameKind, type SpxFrame, loadQueue, loadSolar, loadSolarFrames, loadSpherexCatalog, readVotes, sexagesimal, writeVote, type QueueSource, type SolarData, type SpxCatalog, type SpxTarget, type Vote } from "./data";
-import CommunityPanel from "./Community";
+import CommunityPage from "./Community";
 import { DEFAULT_FIELD, startLive, startMover, type FieldArcmin, type LiveInput } from "./live";
 import { Sky, TELESCOPE_FOV, type Marker } from "./sky/Sky";
 import { photometricDistance, setRelation, type GalaxyObject, type SolarBody } from "./sky/galaxy";
@@ -50,7 +50,6 @@ export default function App() {
   const [votes, setVotes] = useState(readVotes);
   // What all visitors said of the sources of the queue, as far as this visit has asked.
   const [sharedVotes, setSharedVotes] = useState<Record<string, SharedVotes>>({});
-  const [community, setCommunity] = useState(false);
   const [query, setQuery] = useState("");
   const [where, setWhere] = useState("");
   const params = useMemo(() => new URLSearchParams(window.location.search), []);
@@ -61,7 +60,7 @@ export default function App() {
   }, [params]);
   const [fieldArcmin, setFieldArcmin] = useState<FieldArcmin>(() => { const f = Number(params.get("fov")); return f === 4 || f === 8 ? f : DEFAULT_FIELD; });
   const fieldRef = useRef<FieldArcmin>(fieldArcmin); fieldRef.current = fieldArcmin;
-  const [screen, setScreen] = useState<"home" | "sky">(params.has("sky") || urlPosition ? "sky" : "home");
+  const [screen, setScreen] = useState<"home" | "sky" | "community">(params.has("community") ? "community" : params.has("sky") || urlPosition ? "sky" : "home");
   // The talk: "full" for a text slide over the turning galaxy, "live" when the slide is the tool itself.
   const [presenting, setPresenting] = useState<"full" | "live" | null>(params.has("present") ? "full" : null);
   const [guideRun, setGuideRun] = useState(0);
@@ -422,7 +421,7 @@ export default function App() {
           <p className="lead">The infrared sky, seen again every six months in 102 colours. Blink two dates to see what moves or changes brightness. Blink two colours to see what it is made of.</p>
         </header>
         <button type="button" className="primary" onClick={nextUnchecked} disabled={!queue.length}><Shuffle size={14} /> Show me one nobody has checked</button>
-        <button type="button" className="community-open" aria-pressed={community} onClick={() => { setCommunity((c) => !c); setPanel(false); }}>Community votes · what others saw</button>
+        <button type="button" className="community-open" onClick={() => setScreen("community")}>Community votes · what others saw</button>
         <p className="count">{queue.length ? <><CountUp key={queue.length - checked} to={queue.length - checked} from={Math.max(0, queue.length - checked - 40)} duration={0.9} /> unchecked sources · you have looked at {checked}{found ? <> · <b>{found} new candidate{found > 1 ? "s" : ""} found by you</b></> : null}</> : "Loading the review queue…"}</p>
         <form className="search" onSubmit={submit}>
           <Search size={13} /><input value={query} onChange={(e) => { setQuery(e.target.value); setError(""); }} placeholder="RA Dec, or a name · 133.795 -7.245" aria-label="Sky position or name" /><button type="submit">Go</button>
@@ -454,7 +453,7 @@ export default function App() {
         <button type="button" aria-pressed={level === "galaxy" && !solarScale} onClick={() => { if (level === "galaxy") sky.current?.show("sun"); else sky.current?.goLevel("galaxy"); }}>Galaxy view</button>
         <button type="button" aria-pressed={level === "sky"} onClick={() => sky.current?.goLevel("sky")}>Sky view</button>
       </nav>}
-      {screen === "sky" && level === "galaxy" && solarScale && !(target && panel) && guide === null && !community && <aside className="legend glass" aria-label="Legend">
+      {screen === "sky" && level === "galaxy" && solarScale && !(target && panel) && guide === null && <aside className="legend glass" aria-label="Legend">
         <p className="legend-title">The Solar System, seen by SPHEREx</p>
         <ul>
           <li><i className="lg small" style={{ background: "#73c7e6" }} /><span><b>Small dots</b> · {(solar?.count ?? 7083).toLocaleString("en-GB")} asteroids and comets with a SPHEREx visit in our lists. Jupiter trojans are bluer, comets white, centaurs violet</span></li>
@@ -463,7 +462,7 @@ export default function App() {
         </ul>
         <p className="legend-foot">Each small body is drawn where it was <b>on the day SPHEREx saw it</b>, not where it is now: the dots are not one snapshot. Click one: its exposures are read from NASA&apos;s archive and you watch it move against the stars. Scroll out to return to the stars.</p>
       </aside>}
-      {screen === "sky" && level === "galaxy" && !solarScale && !(target && panel) && guide === null && !community && <aside className="legend glass" aria-label="Legend">
+      {screen === "sky" && level === "galaxy" && !solarScale && !(target && panel) && guide === null && <aside className="legend glass" aria-label="Legend">
         <p className="legend-title">What the dots are</p>
         <ul>
           <li><i className="lg small" style={{ background: "linear-gradient(90deg, #ffa866, #ff5c47, #eb5ca8, #9e73ff)" }} /><span><b>Small coloured dots</b> · dwarfs already typed by SPHEREx{published ? ` (${published.count.toLocaleString("en-GB")})` : ""}: M orange, L red, T magenta, Y violet</span></li>
@@ -476,9 +475,9 @@ export default function App() {
       </aside>}
       {guide !== null && screen === "sky" && level === "galaxy" && presenting !== "full" && !(target && panel) && <Guide key={guideRun} autoRun={guideRun > 0} step={guide} published={published?.count ?? 15739} suspects={queue.length || 382} candidates={candidateCount}
         onStep={(next) => { if (next === 1) setSuspectsShown(false); setGuide(next); }} onSuspects={setSuspectsShown} onClose={closeGuide} onHunt={() => { closeGuide(); nextUnchecked(); }} />}
-      {community && screen === "sky" && !(target && panel) && presenting !== "full" && <CommunityPanel queue={queue} onOpen={(q) => { setCommunity(false); chooseQueue(q); }} onClose={() => setCommunity(false)} />}
       {hovered && screen === "sky" && level === "galaxy" && presenting !== "full" && <HoverCard key={`${hovered.ra},${hovered.dec}`} hovered={hovered} />}
-      {screen === "home" && <Landing queueSize={queue.length} images="1.6 million" onEnter={() => enter()} onUnchecked={() => enter(nextUnchecked)} onPresent={() => setPresenting("full")} />}
+      {screen === "home" && <Landing queueSize={queue.length} images="1.6 million" onEnter={() => enter()} onUnchecked={() => enter(nextUnchecked)} onPresent={() => setPresenting("full")} onCommunity={() => setScreen("community")} />}
+      {screen === "community" && <CommunityPage queue={queue} onBack={() => setScreen("home")} onVote={() => enter(nextUnchecked)} onOpen={(q) => enter(() => chooseQueue(q))} />}
       {presenting && <Slides catalog={catalog} queueSize={queue.length} direct={direct} onSlide={(_, live) => { setScreen("sky"); setPresenting(live ? "live" : "full"); }}
         onClose={() => { setPresenting(null); setGuideRun(0); sky.current?.show("sun"); }} onLaunch={() => { setGuideRun(0); enter(); sky.current?.show("sun"); }} />}
       {target && catalog && panel && <Panel target={target} catalog={catalog} view={view} ready={target.frames.length > 0} error="" vote={votes[target.id]?.vote}
