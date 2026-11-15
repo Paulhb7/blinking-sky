@@ -88,6 +88,10 @@ The sources listed are **candidates**. The type comes from stacked, low-resoluti
 | `zenodo/` | Draft article and the table of candidates |
 | `submission/` | Texts of the project page, screenshots, logo, poster, demo video and its source |
 
+## Licence
+
+The code of Blinking Sky is under the MIT licence (see `LICENSE`). Two things are not ours and keep their own terms: the interface components in `app/src/reactbits/`, taken from React Bits, and the data, which belong to their surveys (see Credits). The NASA images used for the cover are credited to NASA/JPL-Caltech.
+
 ## Credits
 
 SPHEREx: NASA/JPL-Caltech/SPHEREx, through NASA/IPAC IRSA. Positions and motions: CatWISE2020. Spectral templates and the table of SPHEREx ultracool dwarfs: Gagné et al. 2026. Galaxies: 2MASS Redshift Survey (Huchra et al. 2012). Small bodies: IRSA Moving Object Search Tool and JPL Horizons. Stars: HYG Database v4.4 (CC BY-SA 4.0). Deep images: Legacy Surveys DR10 and unWISE. Interface: three.js, React, React Bits, Motion, Lucide. Music of the demo video: “Floating Cities” by Kevin MacLeod (incompetech.com), CC BY 4.0. The blink is the method of the citizen-science project Backyard Worlds: Planet 9.

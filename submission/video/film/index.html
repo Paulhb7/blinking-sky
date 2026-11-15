@@ -21,7 +21,13 @@
       .clip { position: absolute; inset: 0; width: 1920px; height: 1080px; }
       video.clip { object-fit: cover; }
       #v-qa { transform-origin: 6% 22%; }
-      #v-vote { transform-origin: 100% 76%; transform: scale(1.7); }
+      #v-vote { transform-origin: 100% 55%; transform: scale(2.9); }
+      .scrim.side { background: linear-gradient(90deg, rgba(3, 8, 17, 0.97) 0%, rgba(3, 8, 17, 0.94) 30%, rgba(3, 8, 17, 0) 41%); }
+      .ring { position: absolute; left: 740px; top: 384px; width: 380px; height: 110px; border-radius: 16px; border: 5px solid var(--amber); box-shadow: 0 0 50px rgba(255, 184, 77, 0.45); }
+      .tally { position: absolute; left: 745px; top: 758px; width: 1045px; height: 116px; border-radius: 14px; border: 4px solid var(--amber); box-shadow: 0 0 60px rgba(255, 184, 77, 0.35); }
+      .scene.left { justify-content: center; padding-right: 1240px; }
+      .scene.left h2 { font-size: 66px; }
+      .scene.left .sub { font-size: 36px; margin-top: 22px; }
       .scrim { background: rgba(3, 8, 17, 0.72); }
       .scrim.light { background: linear-gradient(180deg, rgba(3, 8, 17, 0) 55%, rgba(3, 8, 17, 0.94) 86%); }
       .scene { display: flex; flex-direction: column; justify-content: center; padding: 0 150px; }
@@ -88,34 +94,28 @@
     <div id="root" data-composition-id="main" data-start="0" data-duration="29.6" data-width="1920" data-height="1080" data-fps="30">
 
       <!-- Recorded from the tool itself -->
-      <video class="clip" id="v-galaxy" src="assets/galaxy.mp4" muted playsinline data-start="0" data-duration="3.5" data-media-start="0.2" data-track-index="0"></video>
-      <video class="clip" id="v-enter" src="assets/enter.mp4" muted playsinline data-start="3.5" data-duration="2.0" data-media-start="0.6" data-track-index="0"></video>
-      <video class="clip" id="v-zoom" src="assets/zoom.mp4" muted playsinline data-start="9.0" data-duration="2.5" data-media-start="0.2" data-track-index="0"></video>
-      <video class="clip" id="v-qa" src="assets/searchA.mp4" muted playsinline data-start="11.5" data-duration="1.3" data-media-start="0" data-track-index="0"></video>
-      <video class="clip" id="v-qb" src="assets/searchB.mp4" muted playsinline data-start="12.8" data-duration="1.1" data-media-start="0" data-track-index="0"></video>
-      <video class="clip" id="v-vela" src="assets/vela.mp4" muted playsinline data-start="13.9" data-duration="1.6" data-media-start="2.5" data-track-index="0"></video>
-      <video class="clip" id="v-vote" src="assets/vote.mp4" muted playsinline data-start="15.5" data-duration="2.2" data-media-start="0.9" data-track-index="0"></video>
+      <video class="clip" id="v-galaxy" src="assets/galaxy.mp4" muted playsinline data-start="0" data-duration="2.6" data-media-start="0.2" data-track-index="0"></video>
+      <video class="clip" id="v-enter" src="assets/enter.mp4" muted playsinline data-start="2.6" data-duration="2.0" data-media-start="0.6" data-track-index="0"></video>
+      <video class="clip" id="v-zoom" src="assets/zoom.mp4" muted playsinline data-start="8.1" data-duration="2.8" data-media-start="0.2" data-track-index="0"></video>
+      <video class="clip" id="v-qa" src="assets/searchA.mp4" muted playsinline data-start="10.9" data-duration="1.7" data-media-start="0" data-track-index="0"></video>
+      <video class="clip" id="v-qb" src="assets/searchB.mp4" muted playsinline data-start="12.6" data-duration="1.3" data-media-start="0" data-track-index="0"></video>
+      <video class="clip" id="v-vote" src="assets/vote.mp4" muted playsinline data-start="13.9" data-duration="3.8" data-media-start="0.5" data-track-index="0"></video>
       <video class="clip" id="v-queue" src="assets/queue.mp4" muted playsinline data-start="24.3" data-duration="5.3" data-media-start="2.6" data-track-index="0"></video>
 
-      <div class="clip scrim" id="scrim-a" data-start="0" data-duration="5.5" data-track-index="1"></div>
-      <div class="clip scrim light" id="scrim-b" data-start="9.0" data-duration="8.7" data-track-index="1"></div>
+      <div class="clip scrim" id="scrim-a" data-start="0" data-duration="4.6" data-track-index="1"></div>
+      <div class="clip scrim light" id="scrim-b" data-start="8.1" data-duration="5.8" data-track-index="1"></div>
+      <div class="clip scrim side" id="scrim-v" data-start="13.9" data-duration="3.8" data-track-index="1"></div>
       <div class="clip scrim" id="scrim-c" data-start="24.3" data-duration="5.3" data-track-index="1"></div>
 
       <!-- 0.0 Who we are -->
-      <section class="clip scene" id="s1" data-start="0" data-duration="1.7" data-track-index="2">
-        <p class="kicker">NASA Space Apps 2026</p>
-        <h2>We are <span class="cyan">102 Colours</span>.</h2>
-        <p class="sub">Paul and Aziz · Planet X and SPHEREx</p>
-      </section>
-
-      <!-- 2.6 The challenge -->
-      <section class="clip scene" id="s2" data-start="1.7" data-duration="1.8" data-track-index="2">
+      <section class="clip scene" id="s1" data-start="0" data-duration="2.6" data-track-index="2">
+        <p class="kicker">We are 102 Colours · Paul and Aziz · NASA Space Apps 2026</p>
         <h2>SPHEREx photographs the whole sky every six months.</h2>
-        <p class="sub" id="s2-sub">Who looks at what changed?</p>
+        <p class="sub" id="s1-sub">Who looks at what changed?</p>
       </section>
 
       <!-- 5.6 The name -->
-      <section class="clip scene" id="s3" data-start="3.5" data-duration="2.0" data-track-index="2">
+      <section class="clip scene" id="s3" data-start="2.6" data-duration="2.0" data-track-index="2">
         <img class="logo" id="logo-a" src="assets/logo.png" alt="" />
         <p class="kicker">A public web tool</p>
         <h1>Blinking <span class="cyan">Sky</span></h1>
@@ -123,7 +123,7 @@
       </section>
 
       <!-- 9.4 Blink across dates -->
-      <section class="clip scene blink" id="s4" data-start="5.5" data-duration="3.5" data-track-index="2">
+      <section class="clip scene blink" id="s4" data-start="4.6" data-duration="3.5" data-track-index="2">
         <div class="shot">
           <p class="tag">WISE 0855−0714 · real SPHEREx images</p>
           <div class="frame">
@@ -144,7 +144,7 @@
       </section>
 
       <!-- 14.6 Blink across colours -->
-<section class="clip scene cross" id="s5" data-start="17.7" data-duration="4.0" data-track-index="2">
+<section class="clip scene cross" id="s5" data-start="17.7" data-duration="4" data-track-index="2">
         <p class="kicker">CWISE J2359−2809 · one of the twelve candidates</p>
         <h2>Use Blinking Sky to cross SPHEREx with other surveys.</h2>
         <div class="pairs">
@@ -170,24 +170,23 @@
       </section>
 
       <!-- 15.2 The 3D map -->
-      <section class="clip scene lower" id="s6a" data-start="9.0" data-duration="2.5" data-track-index="2">
+      <section class="clip scene lower" id="s6a" data-start="8.1" data-duration="2.8" data-track-index="2">
         <h2>One 3D map of what SPHEREx sees.</h2>
         <p class="sub">7,083 asteroids · 15,739 dwarfs · 43,463 galaxies, at real distances.</p>
       </section>
       <!-- 18.6 Search -->
-      <section class="clip scene lower" id="s6b" data-start="11.5" data-duration="2.4" data-track-index="2">
+      <section class="clip scene lower" id="s6b" data-start="10.9" data-duration="3.0" data-track-index="2">
         <h2>Search any object or position.</h2>
         <p class="sub">Its images are read live from NASA’s archive.</p>
       </section>
-      <section class="clip scene lower" id="s6c" data-start="13.9" data-duration="1.6" data-track-index="2">
-        <h2>Stars flare up: <span class="amber">4.4 times brighter</span>.</h2>
-        <p class="sub">Measured live, date by date.</p>
-      </section>
 
       <!-- 15.5 Vote, like Backyard Worlds -->
-      <section class="clip scene lower" id="s10" data-start="15.5" data-duration="2.2" data-track-index="2">
-        <h2>Like Backyard Worlds: look, and vote.</h2>
+      <section class="clip scene left" id="s10" data-start="13.9" data-duration="3.8" data-track-index="2">
+        <p class="kicker amber">Citizen science</p>
+        <h2>Like Backyard Worlds: look, and <span class="amber">vote</span>.</h2>
         <p class="sub">Every vote is shared with the community.</p>
+        <i class="ring" id="vote-ring"></i>
+        <div class="tally" id="vote-tally"></div>
       </section>
 
       <!-- 21.2 Why a dip at 3.3 µm means a brown dwarf -->
@@ -227,29 +226,31 @@
       const rise = (sel, at, d = 0.5) => tl.fromTo(sel, { opacity: 0, y: 36 }, { opacity: 1, y: 0, duration: d, ease: "power3.out" }, at);
       const leave = (sel, at) => tl.to(sel, { opacity: 0, duration: 0.25, ease: "power1.in" }, at);
 
-      rise("#s1 .kicker", 0.05, 0.35); rise("#s1 h2", 0.1, 0.35); rise("#s1 .sub", 0.15, 0.35); leave("#s1", 1.5);
-      rise("#s2 h2", 1.75, 0.3); rise("#s2-sub", 2.15, 0.3); leave("#s2", 3.3);
-      tl.fromTo("#logo-a", { opacity: 0, scale: 0.8 }, { opacity: 1, scale: 1, duration: 0.4, ease: "power3.out" }, 3.52); rise("#s3 .kicker", 3.55, 0.3); tl.fromTo("#s3 h1", { opacity: 0, scale: 0.94 }, { opacity: 1, scale: 1, duration: 0.4, ease: "power3.out" }, 3.57); rise("#s3-sub", 3.85, 0.3); leave("#s3", 5.3);
-      tl.to("#scrim-a", { opacity: 0.55, duration: 0.5 }, 3.5);
+      rise("#s1 .kicker", 0.05, 0.35); rise("#s1 h2", 0.12, 0.4); rise("#s1-sub", 0.8, 0.35); leave("#s1", 2.38);
+      tl.fromTo("#logo-a", { opacity: 0, scale: 0.8 }, { opacity: 1, scale: 1, duration: 0.4, ease: "power3.out" }, 2.62); rise("#s3 .kicker", 2.65, 0.3); tl.fromTo("#s3 h1", { opacity: 0, scale: 0.94 }, { opacity: 1, scale: 1, duration: 0.4, ease: "power3.out" }, 2.67); rise("#s3-sub", 2.95, 0.3); leave("#s3", 4.4);
+      tl.to("#scrim-a", { opacity: 0.55, duration: 0.5 }, 2.6);
 
       // Blink across dates: three real stacks on one fixed grid, one after the other.
       const show = (ids, labels, start, end, step) => {
         ids.forEach((id, k) => { tl.set(id, { opacity: k === 0 ? 1 : 0 }, 0); tl.set(labels[k], { opacity: k === 0 ? 1 : 0.3 }, 0); });
         for (let t = start, n = 0; t < end; t += step, n++) ids.forEach((id, k) => { tl.set(id, { opacity: k === n % ids.length ? 1 : 0 }, t); tl.set(labels[k], { opacity: k === n % ids.length ? 1 : 0.3 }, t); });
       };
-      rise("#s4 .frame", 5.5, 0.3); rise("#s4 .say h2", 5.6, 0.35); rise("#s4 .say .sub:not(#s4-diff)", 5.85, 0.35);
-      show(["#d0", "#d1", "#d2"], ["#l0", "#l1", "#l2"], 5.5, 7.6, 0.42);
+      rise("#s4 .frame", 4.6, 0.3); rise("#s4 .say h2", 4.7, 0.35); rise("#s4 .say .sub:not(#s4-diff)", 4.95, 0.35);
+      show(["#d0", "#d1", "#d2"], ["#l0", "#l1", "#l2"], 4.6, 6.7, 0.42);
       // Then what changed: the last date minus the first.
       tl.set("#d3", { opacity: 0 }, 0); tl.set("#l3", { opacity: 0.3 }, 0); tl.set("#s4-diff", { opacity: 0 }, 0);
-      tl.set(["#d0", "#d1", "#d2"], { opacity: 0 }, 7.65); tl.set(["#l0", "#l1", "#l2"], { opacity: 0.3 }, 7.65);
-      tl.set("#d3", { opacity: 1 }, 7.65); tl.set("#l3", { opacity: 1 }, 7.65); rise("#s4-diff", 7.65, 0.3);
+      tl.set(["#d0", "#d1", "#d2"], { opacity: 0 }, 6.75); tl.set(["#l0", "#l1", "#l2"], { opacity: 0.3 }, 6.75);
+      tl.set("#d3", { opacity: 1 }, 6.75); tl.set("#l3", { opacity: 1 }, 6.75); rise("#s4-diff", 6.75, 0.3);
 
-      rise("#s6a h2", 9.05, 0.3); rise("#s6a .sub", 9.15, 0.3);
-      rise("#s6b h2", 11.55, 0.3); rise("#s6b .sub", 11.65, 0.3);
+      rise("#s6a h2", 8.15, 0.3); rise("#s6a .sub", 8.25, 0.3);
+      rise("#s6b h2", 10.95, 0.3); rise("#s6b .sub", 11.05, 0.3);
       // The search box is small on screen: start close to it, then pull back as the map flies to the object.
-      tl.fromTo("#v-qa", { scale: 2.7 }, { scale: 1, duration: 0.42, ease: "power2.inOut" }, 12.3);
-      rise("#s6c h2", 13.95, 0.3); rise("#s6c .sub", 14.05, 0.3);
-      rise("#s10 h2", 15.55, 0.3); rise("#s10 .sub", 15.65, 0.3);
+      tl.fromTo("#v-qa", { scale: 2.7 }, { scale: 1, duration: 0.5, ease: "power2.inOut" }, 11.95);
+      rise("#s10 .kicker", 13.95, 0.3); rise("#s10 h2", 14.0, 0.35); rise("#s10 .sub", 14.2, 0.35);
+      // The click, then the shared count that appears under the buttons.
+      tl.set("#vote-ring", { opacity: 0 }, 0); tl.set("#vote-tally", { opacity: 0 }, 0);
+      tl.fromTo("#vote-ring", { opacity: 0, scale: 1.25 }, { opacity: 1, scale: 1, duration: 0.4, ease: "power2.out" }, 14.35); tl.to("#vote-ring", { opacity: 0, duration: 0.4 }, 15.5);
+      tl.fromTo("#vote-tally", { opacity: 0 }, { opacity: 1, duration: 0.35 }, 15.9);
 
       // Crossing surveys: WISE first, then the same patch in SPHEREx, blinked in two colours.
       rise("#s5 .kicker", 17.75, 0.3); rise("#s5 h2", 17.8, 0.35); rise("#x-wise", 17.9, 0.4);
@@ -265,8 +266,11 @@
       tl.fromTo("#logo-b", { opacity: 0, scale: 0.8 }, { opacity: 1, scale: 1, duration: 0.4, ease: "power3.out" }, 27.12); rise("#s8 h2", 27.15, 0.35); rise("#s8-sub", 27.3, 0.35); rise("#s8 .credit", 27.2, 0.35);
       tl.to("#scrim-c", { opacity: 1, duration: 0.5 }, 27.1);
 
-      window.__timelines["main"] = tl;
-      tl.seek(0);
+      // The film was first cut for 29.6 s: the same animation, slowed to 33 s.
+      const root = gsap.timeline({ paused: true });
+      tl.paused(false); tl.timeScale(1); root.add(tl, 0);
+      window.__timelines["main"] = root;
+      root.seek(0);
     </script>
   </body>
 </html>
