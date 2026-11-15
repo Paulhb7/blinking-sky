@@ -237,9 +237,9 @@ body { background: #02060b; }
 .solar-open:hover { background: rgb(94 242 255 / 0.16); }
 /* Where to look in a frame: four corner ticks around the predicted place, never on it. */
 .sky-stage-mark { position: absolute; width: 0; height: 0; pointer-events: none; }
-.sky-stage-mark::before, .sky-stage-mark::after { content: ""; position: absolute; left: -15px; top: -15px; width: 30px; height: 30px; box-sizing: border-box; }
-.sky-stage-mark::before { border-left: 1px solid rgb(94 242 255 / 0.85); border-right: 1px solid rgb(94 242 255 / 0.85); clip-path: polygon(0 0, 100% 0, 100% 22%, 0 22%, 0 78%, 100% 78%, 100% 100%, 0 100%); }
-.sky-stage-mark::after { border-top: 1px solid rgb(94 242 255 / 0.85); border-bottom: 1px solid rgb(94 242 255 / 0.85); clip-path: polygon(0 0, 22% 0, 22% 100%, 0 100%, 0 0, 78% 0, 100% 0, 100% 100%, 78% 100%); }
+.sky-stage-mark::before, .sky-stage-mark::after { content: ""; position: absolute; left: -22px; top: -22px; width: 44px; height: 44px; box-sizing: border-box; filter: drop-shadow(0 0 3px rgb(0 0 0 / 0.9)); }
+.sky-stage-mark::before { border-left: 2px solid #ffb454; border-right: 2px solid #ffb454; clip-path: polygon(0 0, 100% 0, 100% 26%, 0 26%, 0 74%, 100% 74%, 100% 100%, 0 100%); }
+.sky-stage-mark::after { border-top: 2px solid #ffb454; border-bottom: 2px solid #ffb454; clip-path: polygon(0 0, 26% 0, 26% 100%, 0 100%, 0 0, 74% 0, 100% 0, 100% 100%, 74% 100%); }
 
 /* Community votes: a page of its own. */
 .community-open { display: block; width: 100%; margin-top: 8px; padding: 9px 12px; border: 1px solid rgb(255 180 84 / 0.45); border-radius: 10px; background: rgb(255 180 84 / 0.07); color: #ffd9a3; font: 11px var(--font-geist-mono); letter-spacing: 0.08em; text-align: left; }

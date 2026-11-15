@@ -112,7 +112,7 @@ export class Galaxy {
   private labels: { position: THREE.Vector3; el: HTMLDivElement; reach: number }[] = [];
   private here: HTMLDivElement;
   private travel: Travel | null = null;
-  focus = new THREE.Vector3(); yaw = 0.9; pitch = 0.5; distance = 34;
+  focus = new THREE.Vector3(); yaw = 0.9; pitch = 0.62; distance = 34;
   /** Landing page: the galaxy sits right of the text and the view orbits slowly. */
   home = true;
   selected = "";
@@ -299,6 +299,8 @@ export class Galaxy {
     // `from`: where the camera should end up relative to the focus (unit vector), e.g. on the Sun's side of an object.
     if (from) { this.travel.yaw = Math.atan2(from.z, from.x); this.travel.pitch = Math.asin(Math.max(-1, Math.min(1, from.y))); }
   }
+  /** A direction that looks down on the disc from its north side, keeping the current turn around it. */
+  fromAbove(pitch = 0.62) { return new THREE.Vector3(Math.cos(pitch) * Math.cos(this.yaw), Math.sin(pitch), Math.cos(pitch) * Math.sin(this.yaw)); }
   get travelling() { return this.travel !== null; }
   /** Direction the camera looks along. */
   forward() { return this.camera.getWorldDirection(new THREE.Vector3()); }

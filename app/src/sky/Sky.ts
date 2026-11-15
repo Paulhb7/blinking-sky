@@ -223,7 +223,7 @@ export class Sky {
   /** Landing page on: the whole galaxy, turning. Off: fly to the Sun's surroundings. */
   setHome(on: boolean) {
     this.galaxy.home = on;
-    if (on) { this.bound = false; if (this.mode === "sky") this.setMode("galaxy"); this.galaxy.go(GALACTIC_CENTRE.clone().multiplyScalar(0.8), 34, 1.6); }
+    if (on) { this.bound = false; if (this.mode === "sky") this.setMode("galaxy"); this.galaxy.go(GALACTIC_CENTRE.clone().multiplyScalar(0.8), 34, 1.6, undefined, this.galaxy.fromAbove()); }
     else if (this.mode === "galaxy" && !this.bound) this.galaxy.go(new THREE.Vector3(), 0.11, 3.4);
   }
   private setMode(mode: "galaxy" | "sky") {
@@ -260,11 +260,12 @@ export class Sky {
   show(name: "orbit" | "galaxies" | "milkyway" | "sun" | "solar", seconds = 2.6) {
     if (this.mode !== "galaxy") this.setMode("galaxy");
     this.flight = null; this.staged = false; this.bound = false; this.galaxy.home = name === "orbit";
-    if (name === "orbit") this.galaxy.go(GALACTIC_CENTRE.clone().multiplyScalar(0.8), 34, seconds);
-    else if (name === "galaxies") this.galaxy.go(new THREE.Vector3(), 130000, seconds);
-    else if (name === "milkyway") this.galaxy.go(GALACTIC_CENTRE.clone().multiplyScalar(0.8), 38, seconds);
+    // Every view of the galaxy looks down on the disc from its north side, whatever the tilt left by the Solar System view.
+    if (name === "orbit") this.galaxy.go(GALACTIC_CENTRE.clone().multiplyScalar(0.8), 34, seconds, undefined, this.galaxy.fromAbove());
+    else if (name === "galaxies") this.galaxy.go(new THREE.Vector3(), 130000, seconds, undefined, this.galaxy.fromAbove(0.5));
+    else if (name === "milkyway") this.galaxy.go(GALACTIC_CENTRE.clone().multiplyScalar(0.8), 38, seconds, undefined, this.galaxy.fromAbove());
     else if (name === "solar") this.galaxy.go(new THREE.Vector3(), 15 * AU, seconds + 0.8, undefined, this.galaxy.eclipticView());
-    else this.galaxy.go(new THREE.Vector3(), 0.1, seconds);
+    else this.galaxy.go(new THREE.Vector3(), 0.1, seconds, undefined, this.galaxy.fromAbove(0.5));
   }
   galaxyNamed(name: string) { return this.galaxy.galaxyNamed(name); }
   setSolar(data: Parameters<Galaxy["setSolar"]>[0]) { this.galaxy.setSolar(data); }
@@ -365,7 +366,7 @@ export class Sky {
         if (image && img.getAttribute("src") !== image) img.src = image;
         img.style.opacity = String((this.frame.material as THREE.MeshBasicMaterial).opacity);
         (this.stage.firstChild as HTMLElement).textContent = spec?.label ?? "";
-        if (spec) (this.stage.lastChild as HTMLElement).textContent = `Telescope image · north up, east left · ${spec.sizeArcsec >= 180 ? (spec.sizeArcsec / 60).toFixed(1) + "′" : Math.round(spec.sizeArcsec) + "″"} across`;
+        if (spec) (this.stage.lastChild as HTMLElement).textContent = `Telescope image · north up, east left · ${spec.sizeArcsec >= 180 ? (spec.sizeArcsec / 60).toFixed(1) + "′" : Math.round(spec.sizeArcsec) + "″"} across${spec.mark ? " · the target is between the orange marks" : ""}`;
         this.stage.style.transform = `translate(${x0}px, ${y0}px)`; this.stage.style.width = `${size}px`;
         this.stageMark.style.display = image && spec?.mark ? "block" : "none";
         if (spec?.mark) { this.stageMark.style.left = `${spec.mark[0] * size}px`; this.stageMark.style.top = `${spec.mark[1] * size}px`; }

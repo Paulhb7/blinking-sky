@@ -292,9 +292,10 @@ export default function App() {
   useEffect(() => {
     if (presenting) return;
     const url = new URL(window.location.href), q = url.searchParams;
+    if (screen === "community") q.set("community", ""); else q.delete("community");
     if (base && !base.solar && screen === "sky") { q.set("ra", base.ra.toFixed(5)); q.set("dec", base.dec.toFixed(5)); if (fieldArcmin !== DEFAULT_FIELD && isLive) q.set("fov", String(fieldArcmin)); else q.delete("fov"); }
     else { q.delete("ra"); q.delete("dec"); q.delete("fov"); }
-    const query = q.toString().replace(/(^|&)(sky|present)=(?=&|$)/g, "$1$2"); // the flags stay bare: ?sky, ?present
+    const query = q.toString().replace(/(^|&)(sky|present|community)=(?=&|$)/g, "$1$2"); // the flags stay bare: ?sky, ?present
     const next = `${url.pathname}${query ? `?${query}` : ""}${url.hash}`;
     if (next !== `${window.location.pathname}${window.location.search}${window.location.hash}`) window.history.replaceState(null, "", next);
   }, [base?.id, base?.ra, base?.dec, base?.solar, isLive, fieldArcmin, presenting, screen]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -336,7 +337,7 @@ export default function App() {
     s.setSelected(target?.id ?? "");
     if (!target || !frame || !target.geometry) { s.setFrame(null); return; }
     const g = target.geometry;
-    s.setFrame({ ra: g.centerRaDeg, dec: g.centerDecDeg, sizeArcsec: g.width * g.gridPixelArcsec, mark: frame.at ? [(frame.at[0] + 0.5) / g.width, (frame.at[1] + 0.5) / g.height] : undefined, image: view.flagged && frame.flagged ? frame.flagged : frame.image,
+    s.setFrame({ ra: g.centerRaDeg, dec: g.centerDecDeg, sizeArcsec: g.width * g.gridPixelArcsec, mark: frame.at ? [(frame.at[0] + 0.5) / g.width, (frame.at[1] + 0.5) / g.height] : target.solar ? undefined : [0.5, 0.5], image: view.flagged && frame.flagged ? frame.flagged : frame.image,
       label: frame.kind === "survey" ? `${shortName(target.name)} · ${frame.label}` : `${shortName(target.name)} · SPHEREx ${frame.kind === "date" ? frame.label : frame.label.split(" · ")[0]}${frame.images > 1 ? ` · ${frame.images} exposures` : ""}` });
   }, [target?.id, target?.geometry?.centerRaDeg, frame?.image, frame?.flagged, view.flagged, frame?.label, frame?.images]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { sky.current?.setFrameOpacity(view.opacity); }, [view.opacity]);
