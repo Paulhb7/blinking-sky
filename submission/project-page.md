@@ -1,6 +1,6 @@
 # Space Apps project page — texts to paste
 
-Team: Apollo XXI · Challenge: Planet X and SPHEREx
+Team: 102 Colours - Blinking Sky · Challenge: Planet X and SPHEREx
 Text in [brackets] is for the authors to fill in. Every link must be tested in a private browser window before submitting.
 
 ---

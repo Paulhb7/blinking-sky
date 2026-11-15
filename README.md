@@ -2,7 +2,7 @@
 
 ![Blinking Sky](submission/logo/blinking-sky-lockup.png)
 
-A public web tool to look at real images from NASA's SPHEREx telescope and see what changes: between two dates (what moves, what changes brightness) and between two colours (what it is made of). A project of the NASA Space Apps Challenge 2026, challenge “Planet X and SPHEREx”, by team Apollo XXI.
+A public web tool to look at real images from NASA's SPHEREx telescope and see what changes: between two dates (what moves, what changes brightness) and between two colours (what it is made of). A project of the NASA Space Apps Challenge 2026, challenge “Planet X and SPHEREx”, by team 102 Colours - Blinking Sky.
 
 **Try it: https://blinking-sky.vercel.app** · Demo video: `submission/video/blinking-sky-demo-30s.mp4`
 

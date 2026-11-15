@@ -1,6 +1,6 @@
 # Blinking Sky — texts to paste on the Space Apps platform (final, no brackets)
 
-Team: Apollo XXI · Challenge: Planet X and SPHEREx
+Team: 102 Colours - Blinking Sky · Challenge: Planet X and SPHEREx
 
 ---
 

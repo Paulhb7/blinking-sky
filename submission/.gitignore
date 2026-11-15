@@ -10,3 +10,4 @@ video/film/CLAUDE.md
 video/film/AGENTS.md
 cover/*.png
 !cover/blinking-sky-cover.png
+cover/t-*.png

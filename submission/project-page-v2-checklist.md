@@ -1,6 +1,6 @@
 # Space Apps project page — v2, challenge checklist made explicit
 
-Team: Apollo XXI · Challenge: Planet X and SPHEREx
+Team: 102 Colours - Blinking Sky · Challenge: Planet X and SPHEREx
 Text in [brackets] is for the authors to fill in or check. Everything outside brackets states only what the tool does today (verified in the code on 2026-11-14).
 
 ---
