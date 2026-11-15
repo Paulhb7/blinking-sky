@@ -67,18 +67,20 @@ const FRAG = /* glsl */ `
       // A brown dwarf, drawn like a giant planet seen in its own glow: winds stretch the clouds into belts and zones,
       // with eddies between them. Warm ones are salmon and magenta, cold ones deep violet; methane darkens the belts.
       float t = clamp((uTemp - 350.0) / 950.0, 0.0, 1.0);
-      vec3 base = t > 0.5 ? mix(vec3(0.86, 0.32, 0.62), vec3(1.0, 0.52, 0.38), (t - 0.5) * 2.0) : mix(vec3(0.44, 0.25, 0.78), vec3(0.86, 0.32, 0.62), t * 2.0);
+      // Colours of a body that glows by its own heat: dark plum when cold, wine red, then ember orange when warm.
+      vec3 base = t > 0.5 ? mix(vec3(0.50, 0.15, 0.20), vec3(0.92, 0.38, 0.14), (t - 0.5) * 2.0) : mix(vec3(0.24, 0.12, 0.26), vec3(0.50, 0.15, 0.20), t * 2.0);
       float lat = p.y;
       vec3 w = vec3(p.x * 1.3, lat * 2.6, p.z * 1.3);
       float swirl = fbm(w + vec3(0.0, 0.0, uTime * 0.015));                     // slow wandering of the belts
       float eddy = fbm(vec3(p.x * 5.0, lat * 15.0, p.z * 5.0) + swirl * 2.0);   // fine structure, stretched east–west
-      float flow = lat * 8.5 + 2.2 * (swirl - 0.5) + 0.9 * (eddy - 0.5);
+      float flow = lat * 11.0 + 2.6 * (swirl - 0.5) + 1.3 * (eddy - 0.5);
       float belts = 0.5 + 0.5 * sin(flow);
       belts = mix(belts, 0.5 + 0.5 * sin(flow * 2.3 + 1.7), 0.32);
-      belts = smoothstep(0.18, 0.82, belts + 0.35 * (eddy - 0.5));
-      vec3 belt = base * mix(0.68, 0.42, uMethane) * vec3(0.80, 0.78, 1.20);    // dark belts, bluer
-      vec3 zone = base * 1.30 + vec3(0.14, 0.10, 0.08);                         // bright zones, creamier
-      colour = mix(belt, zone, belts);
+      belts = smoothstep(0.10, 0.90, belts + 0.55 * (eddy - 0.5));
+      float streaks = fbm(vec3(p.x * 9.0, lat * 46.0, p.z * 9.0) + swirl * 3.0);            // thin streaks inside the belts
+      vec3 belt = base * mix(0.62, 0.40, uMethane) * vec3(0.85, 0.80, 1.05);    // dark belts, bluer
+      vec3 zone = base * 1.45 + vec3(0.10, 0.05, 0.03);                         // bright zones, creamier
+      colour = mix(belt, zone, belts) * (0.82 + 0.36 * streaks);
       // A few oval storms riding the belts.
       vec3 sp = vec3(p.x * 2.4, lat * 6.0, p.z * 2.4) + 4.0;
       float storm = smoothstep(0.70, 0.80, fbm(sp)) * (1.0 - uMethane * 0.4);
@@ -86,16 +88,16 @@ const FRAG = /* glsl */ `
       colour *= 1.0 - 0.35 * smoothstep(0.55, 1.0, abs(lat));                   // darker poles
       // Light: it glows by itself, so the night side is never black; a soft day side gives it volume.
       float day = smoothstep(-0.35, 0.85, dot(n, light));
-      colour *= mix(0.34, 1.18, day) * (0.6 + 0.4 * pow(mu, 0.5));
-      colour += base * (0.05 + 0.16 * t) * (1.0 - day);
+      colour *= mix(0.16, 1.25, day) * (0.45 + 0.55 * pow(mu, 0.6));
+      colour += base * (0.04 + 0.14 * t) * (1.0 - day);
     }
     if (uUnknown > 0.5) {
       // Nothing measured says what this is: a plain grey body, on purpose.
       colour = vec3(0.34, 0.38, 0.45) * (0.8 + 0.35 * fbm(p * 3.0)) * (0.25 + 0.8 * pow(mu, 0.8));
     }
     float rim = pow(1.0 - mu, 3.0);
-    vec3 rimTint = uUnknown > 0.5 ? vec3(0.4, 0.5, 0.65) : uStar > 0.5 ? vec3(1.0, 0.5, 0.25) : mix(vec3(0.50, 0.34, 0.95), vec3(1.0, 0.55, 0.55), clamp((uTemp - 350.0) / 950.0, 0.0, 1.0));
-    colour += rimTint * rim * (uStar > 0.5 || uUnknown > 0.5 ? 0.55 : 0.75 * smoothstep(-0.6, 0.6, dot(n, light)));
+    vec3 rimTint = uUnknown > 0.5 ? vec3(0.4, 0.5, 0.65) : uStar > 0.5 ? vec3(1.0, 0.5, 0.25) : mix(vec3(0.45, 0.22, 0.50), vec3(1.0, 0.45, 0.2), clamp((uTemp - 350.0) / 950.0, 0.0, 1.0));
+    colour += rimTint * rim * (uStar > 0.5 || uUnknown > 0.5 ? 0.55 : 0.45 * smoothstep(-0.6, 0.6, dot(n, light)));
     gl_FragColor = vec4(colour * (0.35 + 0.65 * uBright), uFade);
   }`;
 const GLOW_FRAG = /* glsl */ `
@@ -133,7 +135,7 @@ export class Portrait {
     const galaxy = look.kind === "galaxy"; this.tilt.visible = galaxy; this.ball.visible = this.glow.visible = !galaxy;
     this.uniforms.uTemp.value = look.temperature; this.uniforms.uMethane.value = look.methane; this.uniforms.uSeed.value = look.seed; this.uniforms.uStar.value = look.kind === "star" ? 1 : 0; this.uniforms.uUnknown.value = look.kind === "unknown" ? 1 : 0; const small = look.kind === "rock" || look.kind === "comet"; this.uniforms.uRock.value = small ? 1 : 0;
     const t = Math.max(0, Math.min(1, (look.temperature - 350) / 950));
-    if (look.kind === "comet") this.glowUniforms.uColour.value.setRGB(0.55, 0.95, 0.85); else if (look.kind === "rock") this.glowUniforms.uColour.value.setRGB(0.3, 0.3, 0.3); else if (look.kind === "unknown") this.glowUniforms.uColour.value.setRGB(0.3, 0.38, 0.5); else if (look.kind === "star") this.glowUniforms.uColour.value.setRGB(1.0, 0.45, 0.2); else this.glowUniforms.uColour.value.setRGB(0.4 + 0.5 * t, 0.25 + 0.1 * t, 0.6 - 0.2 * t);
+    if (look.kind === "comet") this.glowUniforms.uColour.value.setRGB(0.55, 0.95, 0.85); else if (look.kind === "rock") this.glowUniforms.uColour.value.setRGB(0.3, 0.3, 0.3); else if (look.kind === "unknown") this.glowUniforms.uColour.value.setRGB(0.3, 0.38, 0.5); else if (look.kind === "star") this.glowUniforms.uColour.value.setRGB(1.0, 0.45, 0.2); else this.glowUniforms.uColour.value.setRGB(0.35 + 0.55 * t, 0.13 + 0.17 * t, 0.26 - 0.16 * t);
     this.glowUniforms.uPower.value = look.kind === "comet" ? 1.5 : look.kind === "rock" ? 0.0 : look.kind === "unknown" ? 0.18 : look.kind === "star" ? 0.9 : 0.25 + 0.4 * t;
   }
 

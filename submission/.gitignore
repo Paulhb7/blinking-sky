@@ -8,3 +8,5 @@ video/film/assets/*.mp4
 video/film/assets/*.m4a
 video/film/CLAUDE.md
 video/film/AGENTS.md
+cover/*.png
+!cover/blinking-sky-cover.png

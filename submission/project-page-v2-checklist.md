@@ -63,17 +63,17 @@ To say what an object is, we use one simple test, the methane index: the flux at
 
 Anyone can look at real SPHEREx images within seconds, on any position, with no account and nothing to install. It gives a result. Applied to red, moving sources from CatWISE2020, the methane test leaves 48 sources consistent with a late T or Y dwarf, the coldest kind of brown dwarf. Three were already typed from a spectrum: the selection found them blindly, which checks the method. For 33 published candidates, SPHEREx adds spectral evidence. For 12, we found no publication. All are candidates; none is confirmed by spectroscopy, and some of the 12 may already be known to other teams.
 
-The candidate table gives observers a short list for follow-up spectroscopy. [It is deposited on Zenodo: <DOI>. If there is no DOI at submission time, remove this sentence.] The site is static and reads NASA’s archive directly, so it costs nothing to keep online.
+The candidate table gives observers a short list for follow-up spectroscopy; it will be deposited on Zenodo after the hackathon. The site is static and reads NASA’s archive directly, so it costs nothing to keep online.
 
 ## What is the intended impact?
 
-SPHEREx re-observes the whole sky every six months, and nobody can look at more than a billion sources alone. We want the public to do with SPHEREx what volunteers of Backyard Worlds: Planet 9 did with WISE: blink, notice, report. The review queue is the first step: 382 real sources with no SPHEREx examination that we could find, open to anyone. Next, we want to collect the votes so that several people looking at the same source produce a shared answer, ask for spectra of the 12 candidates, and extend the search to the next SPHEREx data release.
+SPHEREx re-observes the whole sky every six months, and nobody can look at more than a billion sources alone. We want the public to do with SPHEREx what volunteers of Backyard Worlds: Planet 9 did with WISE: blink, notice, report. The review queue is the first step: 382 real sources with no SPHEREx examination that we could find, open to anyone. Next, we want to collect the votes so that several people looking at the same source produce a shared answer, ask for spectra of the 12 candidates, and extend the search to the next SPHEREx data release. After the hackathon we will write up the twelve candidates as a Research Note of the AAS and deposit the table on Zenodo: Paul, who already has an author account, will submit it with Aziz.
 
 The three clearest of the twelve candidates (methane index below 0.30 means a dip):
 1. CWISE J235953.52−280957.6 · T7 ± 1 · W2 15.05 (WISE 4.6 µm magnitude) · S/N 12.4 · index 0.03 ± 0.05
 2. CWISE J043050.49−072453.9 · T7 ± 1 · W2 15.52 · S/N 10.3 · index 0.09 ± 0.07
 3. CWISE J111646.88−233305.8 · T7 ± 1 · W2 15.34 · S/N 10.1 · index 0.05 ± 0.07
-The full ranked table of twelve, with the images at 4 µm and in the methane band, is in the repository [and in the Zenodo record].
+The full ranked table of twelve, with the images at 4 µm and in the methane band, is in the repository.
 
 ## What tools, coding languages, hardware, or software did you use?
 

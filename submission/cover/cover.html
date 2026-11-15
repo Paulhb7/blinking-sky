@@ -1,0 +1,32 @@
+<!doctype html><meta charset="utf-8">
+<style>
+*{margin:0;box-sizing:border-box}
+body{width:1920px;height:1080px;overflow:hidden;position:relative;background:#030811}
+.galaxy{position:absolute;left:-250px;top:-190px;width:1750px;mix-blend-mode:lighten;opacity:.95}
+.veil{position:absolute;inset:0;background:radial-gradient(900px 700px at 80% 46%,rgba(190,50,60,.20),transparent 62%),radial-gradient(700px 500px at 12% 96%,rgba(94,242,255,.10),transparent 60%),linear-gradient(90deg,transparent 40%,rgba(3,8,17,.55) 78%)}
+svg{position:absolute;inset:0}
+.body{position:absolute;border-radius:50%;overflow:hidden}
+.body img{position:absolute;display:block}
+.d1{left:1196px;top:150px;width:600px;height:600px;box-shadow:0 0 150px 26px rgba(200,56,66,.34),0 0 36px 3px rgba(255,130,120,.28)}
+.d1 img{width:724px;left:-68px;top:-34px}
+.d2{left:1010px;top:610px;width:230px;height:230px;box-shadow:0 0 70px 10px rgba(120,70,150,.38)}
+.d2 img{width:278px;left:-26px;top:-13px}
+.rock{position:absolute;left:1540px;top:742px;width:300px;mix-blend-mode:lighten;transform:rotate(-14deg);clip-path:circle(44% at 54% 50%)}
+.frame{position:absolute;width:300px;height:300px;border-radius:10px;overflow:hidden;background:#000;box-shadow:0 30px 80px rgba(0,0,0,.75)}
+.frame img{position:absolute;left:-30%;top:-30%;width:160%;height:160%}
+.frame i{position:absolute;left:50%;top:50%;width:60px;height:60px;margin:-30px 0 0 -30px;border-radius:50%;border:2px dashed rgba(255,184,77,.95)}
+.f1{left:150px;top:640px;border:2px solid rgba(94,242,255,.8);transform:rotate(-5deg)}
+.f2{left:410px;top:690px;border:2px solid rgba(255,184,77,.85);transform:rotate(4deg)}
+</style>
+<img class="galaxy" src="galaxy.png">
+<div class="veil"></div>
+<svg viewBox="0 0 1920 1080" fill="none">
+  <ellipse cx="1496" cy="450" rx="560" ry="150" transform="rotate(-16 1496 450)" stroke="rgba(94,242,255,.28)" stroke-width="1.5"/>
+  <ellipse cx="1496" cy="450" rx="760" ry="215" transform="rotate(-16 1496 450)" stroke="rgba(94,242,255,.14)" stroke-width="1.5" stroke-dasharray="3 10"/>
+  <circle cx="964" cy="602" r="6" fill="#ffb84d"/><circle cx="2000" cy="300" r="5" fill="#5ef2ff"/>
+</svg>
+<div class="body d1"><img src="dwarf.png"></div>
+<div class="body d2"><img src="dwarf2.png"></div>
+<img class="rock" src="rock.png">
+<div class="frame f1"><img src="lw.png"><i></i></div>
+<div class="frame f2"><img src="ch4.png"><i></i></div>
