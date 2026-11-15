@@ -41,6 +41,7 @@ Real SPHEREx images at 4 µm and in the methane band. These are candidates: none
 | ![Solar System](submission/images/04-solar-system-map.png) The Solar System as SPHEREx saw it | ![Ceres](submission/images/05-solar-system-ceres.png) Ceres, exposures read live |
 | ![Milky Way](submission/images/11-milky-way.png) The Milky Way, with the Sun's position | ![Galaxies](submission/images/12-cosmic-web-galaxies.png) 43,463 galaxies around the Milky Way |
 | ![Sky view](submission/images/06-sky-view.png) The sky view | ![Map of dwarfs](submission/images/09-map-of-nearby-dwarfs.png) The map of nearby dwarfs |
+| ![Other surveys](submission/images/17-other-surveys-wise.png) The same field in WISE, aligned on the SPHEREx image | ![Community votes](submission/images/18-community-votes.png) Community votes: what other visitors saw |
 | ![What changed](submission/images/15-what-changed-wise0855.png) What changed: last date minus first | ![A star that brightened](submission/images/14-star-that-brightened.png) A young star, 4.4 times brighter in a year |
 | ![Ceres, what changed](submission/images/16-ceres-what-changed.png) Ceres in 1.7 hours: where it was (black), where it is (white) | |
 
@@ -55,6 +56,7 @@ Real SPHEREx images at 4 µm and in the methane band. These are candidates: none
 - **Read live.** For any position, the browser finds the exposures that cover it, reads a small window of each from NASA's public bucket and stacks them while you watch (about 170 exposures, 50 MB, one minute).
 - **One map, three scales.** The Solar System (Sun, Earth, planets, 7,083 asteroids and comets where SPHEREx saw them), the Milky Way (15,739 dwarfs typed by SPHEREx, the candidates, 382 unchecked sources) and 43,463 galaxies at their redshift distance.
 - **A review queue.** 382 red, moving WISE sources nobody has examined in SPHEREx. You look, you vote, you see the measurement and what other visitors said. Votes are counted for everyone, with no name and no account.
+- **Community votes.** As in Backyard Worlds, many eyes look at the same sources. A panel shows how many votes have been cast, on how many sources, and the latest ones; each opens its source.
 - **A printable candidate sheet**, and a 3D view of each object, labelled as an illustration.
 
 ## Run it

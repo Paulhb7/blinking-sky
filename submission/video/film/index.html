@@ -21,6 +21,7 @@
       .clip { position: absolute; inset: 0; width: 1920px; height: 1080px; }
       video.clip { object-fit: cover; }
       #v-qa { transform-origin: 6% 22%; }
+      #v-vote { transform-origin: 100% 76%; transform: scale(1.7); }
       .scrim { background: rgba(3, 8, 17, 0.72); }
       .scrim.light { background: linear-gradient(180deg, rgba(3, 8, 17, 0) 55%, rgba(3, 8, 17, 0.94) 86%); }
       .scene { display: flex; flex-direction: column; justify-content: center; padding: 0 150px; }
@@ -87,17 +88,18 @@
     <div id="root" data-composition-id="main" data-start="0" data-duration="29.6" data-width="1920" data-height="1080" data-fps="30">
 
       <!-- Recorded from the tool itself -->
-      <video class="clip" id="v-galaxy" src="assets/galaxy.mp4" muted playsinline data-start="0" data-duration="3.8" data-media-start="0.2" data-track-index="0"></video>
-      <video class="clip" id="v-enter" src="assets/enter.mp4" muted playsinline data-start="3.8" data-duration="2.3" data-media-start="0.6" data-track-index="0"></video>
-      <video class="clip" id="v-zoom" src="assets/zoom.mp4" muted playsinline data-start="9.9" data-duration="2.8" data-media-start="0.2" data-track-index="0"></video>
-      <video class="clip" id="v-qa" src="assets/searchA.mp4" muted playsinline data-start="12.7" data-duration="1.4" data-media-start="0" data-track-index="0"></video>
-      <video class="clip" id="v-qb" src="assets/searchB.mp4" muted playsinline data-start="14.1" data-duration="1.2" data-media-start="0" data-track-index="0"></video>
-      <video class="clip" id="v-vela" src="assets/vela.mp4" muted playsinline data-start="15.3" data-duration="1.6" data-media-start="2.5" data-track-index="0"></video>
-      <video class="clip" id="v-queue" src="assets/queue.mp4" muted playsinline data-start="24" data-duration="5.6" data-media-start="2.6" data-track-index="0"></video>
+      <video class="clip" id="v-galaxy" src="assets/galaxy.mp4" muted playsinline data-start="0" data-duration="3.5" data-media-start="0.2" data-track-index="0"></video>
+      <video class="clip" id="v-enter" src="assets/enter.mp4" muted playsinline data-start="3.5" data-duration="2.0" data-media-start="0.6" data-track-index="0"></video>
+      <video class="clip" id="v-zoom" src="assets/zoom.mp4" muted playsinline data-start="9.0" data-duration="2.5" data-media-start="0.2" data-track-index="0"></video>
+      <video class="clip" id="v-qa" src="assets/searchA.mp4" muted playsinline data-start="11.5" data-duration="1.3" data-media-start="0" data-track-index="0"></video>
+      <video class="clip" id="v-qb" src="assets/searchB.mp4" muted playsinline data-start="12.8" data-duration="1.1" data-media-start="0" data-track-index="0"></video>
+      <video class="clip" id="v-vela" src="assets/vela.mp4" muted playsinline data-start="13.9" data-duration="1.6" data-media-start="2.5" data-track-index="0"></video>
+      <video class="clip" id="v-vote" src="assets/vote.mp4" muted playsinline data-start="15.5" data-duration="2.2" data-media-start="0.9" data-track-index="0"></video>
+      <video class="clip" id="v-queue" src="assets/queue.mp4" muted playsinline data-start="24.3" data-duration="5.3" data-media-start="2.6" data-track-index="0"></video>
 
-      <div class="clip scrim" id="scrim-a" data-start="0" data-duration="6.1" data-track-index="1"></div>
-      <div class="clip scrim light" id="scrim-b" data-start="9.9" data-duration="7" data-track-index="1"></div>
-      <div class="clip scrim" id="scrim-c" data-start="24" data-duration="5.6" data-track-index="1"></div>
+      <div class="clip scrim" id="scrim-a" data-start="0" data-duration="5.5" data-track-index="1"></div>
+      <div class="clip scrim light" id="scrim-b" data-start="9.0" data-duration="8.7" data-track-index="1"></div>
+      <div class="clip scrim" id="scrim-c" data-start="24.3" data-duration="5.3" data-track-index="1"></div>
 
       <!-- 0.0 Who we are -->
       <section class="clip scene" id="s1" data-start="0" data-duration="1.7" data-track-index="2">
@@ -107,13 +109,13 @@
       </section>
 
       <!-- 2.6 The challenge -->
-      <section class="clip scene" id="s2" data-start="1.7" data-duration="2.1" data-track-index="2">
+      <section class="clip scene" id="s2" data-start="1.7" data-duration="1.8" data-track-index="2">
         <h2>SPHEREx photographs the whole sky every six months.</h2>
         <p class="sub" id="s2-sub">Who looks at what changed?</p>
       </section>
 
       <!-- 5.6 The name -->
-      <section class="clip scene" id="s3" data-start="3.8" data-duration="2.3" data-track-index="2">
+      <section class="clip scene" id="s3" data-start="3.5" data-duration="2.0" data-track-index="2">
         <img class="logo" id="logo-a" src="assets/logo.png" alt="" />
         <p class="kicker">A public web tool</p>
         <h1>Blinking <span class="cyan">Sky</span></h1>
@@ -121,7 +123,7 @@
       </section>
 
       <!-- 9.4 Blink across dates -->
-      <section class="clip scene blink" id="s4" data-start="6.1" data-duration="3.8" data-track-index="2">
+      <section class="clip scene blink" id="s4" data-start="5.5" data-duration="3.5" data-track-index="2">
         <div class="shot">
           <p class="tag">WISE 0855−0714 · real SPHEREx images</p>
           <div class="frame">
@@ -142,7 +144,7 @@
       </section>
 
       <!-- 14.6 Blink across colours -->
-<section class="clip scene cross" id="s5" data-start="16.9" data-duration="4.3" data-track-index="2">
+<section class="clip scene cross" id="s5" data-start="17.7" data-duration="4.0" data-track-index="2">
         <p class="kicker">CWISE J2359−2809 · one of the twelve candidates</p>
         <h2>Use Blinking Sky to cross SPHEREx with other surveys.</h2>
         <div class="pairs">
@@ -168,23 +170,29 @@
       </section>
 
       <!-- 15.2 The 3D map -->
-      <section class="clip scene lower" id="s6a" data-start="9.9" data-duration="2.8" data-track-index="2">
+      <section class="clip scene lower" id="s6a" data-start="9.0" data-duration="2.5" data-track-index="2">
         <h2>One 3D map of what SPHEREx sees.</h2>
         <p class="sub">7,083 asteroids · 15,739 dwarfs · 43,463 galaxies, at real distances.</p>
       </section>
       <!-- 18.6 Search -->
-      <section class="clip scene lower" id="s6b" data-start="12.7" data-duration="2.6" data-track-index="2">
+      <section class="clip scene lower" id="s6b" data-start="11.5" data-duration="2.4" data-track-index="2">
         <h2>Search any object or position.</h2>
         <p class="sub">Its images are read live from NASA’s archive.</p>
       </section>
-      <section class="clip scene lower" id="s6c" data-start="15.3" data-duration="1.6" data-track-index="2">
+      <section class="clip scene lower" id="s6c" data-start="13.9" data-duration="1.6" data-track-index="2">
         <h2>Stars flare up: <span class="amber">4.4 times brighter</span>.</h2>
         <p class="sub">Measured live, date by date.</p>
       </section>
 
+      <!-- 15.5 Vote, like Backyard Worlds -->
+      <section class="clip scene lower" id="s10" data-start="15.5" data-duration="2.2" data-track-index="2">
+        <h2>Like Backyard Worlds: look, and vote.</h2>
+        <p class="sub">Every vote is shared with the community.</p>
+      </section>
+
       <!-- 21.2 Why a dip at 3.3 µm means a brown dwarf -->
-      <section class="clip scene why" id="s9" data-start="21.2" data-duration="2.8" data-track-index="2">
-        <svg class="spec" viewBox="0 0 900 470" width="900" height="470" fill="none"><rect x="290.74074074074076" y="30" width="111.48148148148147" height="384" fill="rgba(255,184,77,0.20)" stroke="rgba(255,184,77,0.7)" stroke-width="2"/><rect x="507.3333333333334" y="30" width="117.8518518518519" height="384" fill="rgba(94,242,255,0.12)" stroke="rgba(94,242,255,0.5)" stroke-width="2"/><line x1="20" x2="880" y1="374.51332675222113" y2="374.51332675222113" stroke="rgba(169,195,210,0.5)" stroke-width="2"/><polyline points="29.2,370.4 43.9,369.4 59.2,365.6 85.3,363.3 111.7,364.8 137.9,364.2 164.0,361.9 190.1,354.6 216.5,339.9 242.6,328.1 268.8,337.8 295.2,357.8 321.3,364.9 347.4,365.3 373.9,363.9 400.0,358.3 426.1,345.0 452.2,319.7 478.7,287.0 500.6,254.4 512.1,240.3 523.6,226.1 535.0,205.1 546.5,181.2 558.0,156.6 569.4,131.9 580.9,106.6 592.4,90.8 603.5,89.7 615.0,110.0 626.5,160.5 637.9,197.4 649.4,198.1 660.9,193.0 672.3,182.1 683.8,173.7 692.7,179.8 703.9,203.1 714.7,229.1 725.8,252.4 737.0,264.3 748.1,263.3 759.0,253.8 770.1,233.5 781.3,230.3 792.1,244.0 803.2,250.3 814.4,249.9 825.2,243.5 836.4,235.0 847.5,228.7 858.7,230.9 869.5,224.8" stroke="#ffb84d" stroke-width="4" stroke-linejoin="round" opacity="0.9"/><line x1="43.9" x2="43.9" y1="365.0" y2="325.7" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="43.9" cy="345.4" r="5.5" fill="#5ef2ff"/><line x1="59.2" x2="59.2" y1="347.6" y2="325.5" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="59.2" cy="336.5" r="5.5" fill="#5ef2ff"/><line x1="85.3" x2="85.3" y1="375.1" y2="349.8" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="85.3" cy="362.5" r="5.5" fill="#5ef2ff"/><line x1="111.7" x2="111.7" y1="377.6" y2="344.0" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="111.7" cy="360.8" r="5.5" fill="#5ef2ff"/><line x1="137.9" x2="137.9" y1="351.6" y2="327.7" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="137.9" cy="339.7" r="5.5" fill="#5ef2ff"/><line x1="164.0" x2="164.0" y1="352.6" y2="323.4" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="164.0" cy="338.0" r="5.5" fill="#5ef2ff"/><line x1="190.1" x2="190.1" y1="352.0" y2="324.6" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="190.1" cy="338.3" r="5.5" fill="#5ef2ff"/><line x1="216.5" x2="216.5" y1="358.0" y2="323.5" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="216.5" cy="340.8" r="5.5" fill="#5ef2ff"/><line x1="242.6" x2="242.6" y1="329.4" y2="303.3" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="242.6" cy="316.4" r="5.5" fill="#5ef2ff"/><line x1="295.2" x2="295.2" y1="375.9" y2="352.2" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="295.2" cy="364.0" r="5.5" fill="#5ef2ff"/><line x1="321.3" x2="321.3" y1="376.7" y2="351.0" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="321.3" cy="363.9" r="5.5" fill="#5ef2ff"/><line x1="347.4" x2="347.4" y1="368.7" y2="338.1" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="347.4" cy="353.4" r="5.5" fill="#5ef2ff"/><line x1="373.9" x2="373.9" y1="385.3" y2="360.4" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="373.9" cy="372.8" r="5.5" fill="#5ef2ff"/><line x1="426.1" x2="426.1" y1="367.2" y2="341.1" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="426.1" cy="354.2" r="5.5" fill="#5ef2ff"/><line x1="452.2" x2="452.2" y1="351.5" y2="307.9" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="452.2" cy="329.7" r="5.5" fill="#5ef2ff"/><line x1="478.7" x2="478.7" y1="291.4" y2="261.4" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="478.7" cy="276.4" r="5.5" fill="#5ef2ff"/><line x1="500.6" x2="500.6" y1="315.8" y2="278.1" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="500.6" cy="296.9" r="5.5" fill="#5ef2ff"/><line x1="512.1" x2="512.1" y1="284.9" y2="152.2" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="512.1" cy="218.5" r="5.5" fill="#5ef2ff"/><line x1="523.6" x2="523.6" y1="298.1" y2="231.8" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="523.6" cy="264.9" r="5.5" fill="#5ef2ff"/><line x1="535.0" x2="535.0" y1="187.9" y2="119.2" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="535.0" cy="153.6" r="5.5" fill="#5ef2ff"/><line x1="546.5" x2="546.5" y1="241.7" y2="165.9" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="546.5" cy="203.8" r="5.5" fill="#5ef2ff"/><line x1="558.0" x2="558.0" y1="217.0" y2="137.2" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="558.0" cy="177.1" r="5.5" fill="#5ef2ff"/><line x1="569.4" x2="569.4" y1="211.9" y2="134.7" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="569.4" cy="173.3" r="5.5" fill="#5ef2ff"/><line x1="580.9" x2="580.9" y1="159.7" y2="82.9" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="580.9" cy="121.3" r="5.5" fill="#5ef2ff"/><line x1="592.4" x2="592.4" y1="167.7" y2="86.6" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="592.4" cy="127.1" r="5.5" fill="#5ef2ff"/><line x1="603.5" x2="603.5" y1="115.5" y2="18.3" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="603.5" cy="66.9" r="5.5" fill="#5ef2ff"/><line x1="615.0" x2="615.0" y1="123.7" y2="39.4" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="615.0" cy="81.5" r="5.5" fill="#5ef2ff"/><line x1="626.5" x2="626.5" y1="169.6" y2="88.8" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="626.5" cy="129.2" r="5.5" fill="#5ef2ff"/><line x1="637.9" x2="637.9" y1="202.0" y2="112.7" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="637.9" cy="157.3" r="5.5" fill="#5ef2ff"/><line x1="649.4" x2="649.4" y1="260.2" y2="148.6" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="649.4" cy="204.4" r="5.5" fill="#5ef2ff"/><line x1="660.9" x2="660.9" y1="274.8" y2="187.7" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="660.9" cy="231.3" r="5.5" fill="#5ef2ff"/><line x1="672.3" x2="672.3" y1="243.2" y2="156.7" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="672.3" cy="200.0" r="5.5" fill="#5ef2ff"/><line x1="683.8" x2="683.8" y1="216.4" y2="123.2" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="683.8" cy="169.8" r="5.5" fill="#5ef2ff"/><line x1="692.7" x2="692.7" y1="237.9" y2="156.2" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="692.7" cy="197.0" r="5.5" fill="#5ef2ff"/><line x1="703.9" x2="703.9" y1="322.0" y2="73.4" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="703.9" cy="197.7" r="5.5" fill="#5ef2ff"/><line x1="714.7" x2="714.7" y1="197.6" y2="97.5" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="714.7" cy="147.6" r="5.5" fill="#5ef2ff"/><line x1="725.8" x2="725.8" y1="255.9" y2="139.6" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="725.8" cy="197.7" r="5.5" fill="#5ef2ff"/><line x1="737.0" x2="737.0" y1="315.2" y2="209.8" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="737.0" cy="262.5" r="5.5" fill="#5ef2ff"/><line x1="748.1" x2="748.1" y1="307.8" y2="221.9" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="748.1" cy="264.8" r="5.5" fill="#5ef2ff"/><line x1="759.0" x2="759.0" y1="378.5" y2="201.4" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="759.0" cy="289.9" r="5.5" fill="#5ef2ff"/><line x1="770.1" x2="770.1" y1="291.4" y2="111.5" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="770.1" cy="201.5" r="5.5" fill="#5ef2ff"/><line x1="781.3" x2="781.3" y1="288.0" y2="142.9" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="781.3" cy="215.5" r="5.5" fill="#5ef2ff"/><line x1="792.1" x2="792.1" y1="268.2" y2="142.4" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="792.1" cy="205.3" r="5.5" fill="#5ef2ff"/><line x1="814.4" x2="814.4" y1="328.9" y2="189.5" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="814.4" cy="259.2" r="5.5" fill="#5ef2ff"/><line x1="825.2" x2="825.2" y1="241.1" y2="105.3" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="825.2" cy="173.2" r="5.5" fill="#5ef2ff"/><line x1="836.4" x2="836.4" y1="390.5" y2="253.7" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="836.4" cy="322.1" r="5.5" fill="#5ef2ff"/><line x1="847.5" x2="847.5" y1="247.9" y2="83.0" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="847.5" cy="165.4" r="5.5" fill="#5ef2ff"/><line x1="858.7" x2="858.7" y1="449.0" y2="260.1" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="858.7" cy="354.6" r="5.5" fill="#5ef2ff"/><text x="83.70370370370375" y="450" text-anchor="middle" font-family="DM Mono, monospace" font-size="26" fill="#a9c3d2">2.5</text><text x="242.962962962963" y="450" text-anchor="middle" font-family="DM Mono, monospace" font-size="26" fill="#a9c3d2">3</text><text x="402.22222222222223" y="450" text-anchor="middle" font-family="DM Mono, monospace" font-size="26" fill="#a9c3d2">3.5</text><text x="561.4814814814815" y="450" text-anchor="middle" font-family="DM Mono, monospace" font-size="26" fill="#a9c3d2">4</text><text x="720.7407407407408" y="450" text-anchor="middle" font-family="DM Mono, monospace" font-size="26" fill="#a9c3d2">4.5</text><text x="880" y="450" text-anchor="middle" font-family="DM Mono, monospace" font-size="26" fill="#a9c3d2">5 µm</text><text x="346.4814814814816" y="22" text-anchor="middle" font-family="DM Mono, monospace" font-size="26" fill="#ffb84d">methane</text></svg>
+      <section class="clip scene why" id="s9" data-start="21.7" data-duration="2.6" data-track-index="2">
+        <svg class="spec" viewBox="0 0 900 470" width="900" height="470" fill="none"><rect x="290.74074074074076" y="30" width="111.48148148148147" height="384" fill="rgba(255,184,77,0.20)" stroke="rgba(255,184,77,0.7)" stroke-width="2"/><rect x="507.3333333333334" y="30" width="117.8518518518519" height="384" fill="rgba(94,242,255,0.12)" stroke="rgba(94,242,255,0.5)" stroke-width="2"/><line x1="20" x2="880" y1="374.51332675222113" y2="374.51332675222113" stroke="rgba(169,195,210,0.5)" stroke-width="2"/><polyline points="29.2,370.4 43.9,369.4 59.2,365.6 85.3,363.3 111.7,364.8 137.9,364.2 164.0,361.9 190.1,354.6 216.5,339.9 242.6,328.1 268.8,337.8 295.2,357.8 321.3,364.9 347.4,365.3 373.9,363.9 400.0,358.3 426.1,345.0 452.2,319.7 478.7,287.0 500.6,254.4 512.1,240.3 523.6,226.1 535.0,205.1 546.5,181.2 558.0,156.6 569.4,131.9 580.9,106.6 592.4,90.8 603.5,89.7 615.0,110.0 626.5,160.5 637.9,197.4 649.4,198.1 660.9,193.0 672.3,182.1 683.8,173.7 692.7,179.8 703.9,203.1 714.7,229.1 725.8,252.4 737.0,264.3 748.1,263.3 759.0,253.8 770.1,233.5 781.3,230.3 792.1,244.0 803.2,250.3 814.4,249.9 825.2,243.5 836.4,235.0 847.5,228.7 858.7,230.9 869.5,224.8" stroke="#ffb84d" stroke-width="4" stroke-linejoin="round" opacity="0.9"/><line x1="43.9" x2="43.9" y1="365.0" y2="325.7" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="43.9" cy="345.4" r="5.5" fill="#5ef2ff"/><line x1="59.2" x2="59.2" y1="347.6" y2="325.5" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="59.2" cy="336.5" r="5.5" fill="#5ef2ff"/><line x1="85.3" x2="85.3" y1="375.1" y2="349.8" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="85.3" cy="362.5" r="5.5" fill="#5ef2ff"/><line x1="111.7" x2="111.7" y1="377.6" y2="344.0" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="111.7" cy="360.8" r="5.5" fill="#5ef2ff"/><line x1="137.9" x2="137.9" y1="351.6" y2="327.7" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="137.9" cy="339.7" r="5.5" fill="#5ef2ff"/><line x1="164.0" x2="164.0" y1="352.6" y2="323.4" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="164.0" cy="338.0" r="5.5" fill="#5ef2ff"/><line x1="190.1" x2="190.1" y1="352.0" y2="324.6" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="190.1" cy="338.3" r="5.5" fill="#5ef2ff"/><line x1="216.5" x2="216.5" y1="358.0" y2="323.5" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="216.5" cy="340.8" r="5.5" fill="#5ef2ff"/><line x1="242.6" x2="242.6" y1="329.4" y2="303.3" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="242.6" cy="316.4" r="5.5" fill="#5ef2ff"/><line x1="295.2" x2="295.2" y1="375.9" y2="352.2" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="295.2" cy="364.0" r="5.5" fill="#5ef2ff"/><line x1="321.3" x2="321.3" y1="376.7" y2="351.0" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="321.3" cy="363.9" r="5.5" fill="#5ef2ff"/><line x1="347.4" x2="347.4" y1="368.7" y2="338.1" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="347.4" cy="353.4" r="5.5" fill="#5ef2ff"/><line x1="373.9" x2="373.9" y1="385.3" y2="360.4" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="373.9" cy="372.8" r="5.5" fill="#5ef2ff"/><line x1="426.1" x2="426.1" y1="367.2" y2="341.1" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="426.1" cy="354.2" r="5.5" fill="#5ef2ff"/><line x1="452.2" x2="452.2" y1="351.5" y2="307.9" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="452.2" cy="329.7" r="5.5" fill="#5ef2ff"/><line x1="478.7" x2="478.7" y1="291.4" y2="261.4" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="478.7" cy="276.4" r="5.5" fill="#5ef2ff"/><line x1="500.6" x2="500.6" y1="315.8" y2="278.1" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="500.6" cy="296.9" r="5.5" fill="#5ef2ff"/><line x1="512.1" x2="512.1" y1="284.9" y2="152.2" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="512.1" cy="218.5" r="5.5" fill="#5ef2ff"/><line x1="523.6" x2="523.6" y1="298.1" y2="231.8" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="523.6" cy="264.9" r="5.5" fill="#5ef2ff"/><line x1="535.0" x2="535.0" y1="187.9" y2="119.2" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="535.0" cy="153.6" r="5.5" fill="#5ef2ff"/><line x1="546.5" x2="546.5" y1="241.7" y2="165.9" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="546.5" cy="203.8" r="5.5" fill="#5ef2ff"/><line x1="558.0" x2="558.0" y1="217.0" y2="137.2" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="558.0" cy="177.1" r="5.5" fill="#5ef2ff"/><line x1="569.4" x2="569.4" y1="211.9" y2="134.7" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="569.4" cy="173.3" r="5.5" fill="#5ef2ff"/><line x1="580.9" x2="580.9" y1="159.7" y2="82.9" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="580.9" cy="121.3" r="5.5" fill="#5ef2ff"/><line x1="592.4" x2="592.4" y1="167.7" y2="86.6" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="592.4" cy="127.1" r="5.5" fill="#5ef2ff"/><line x1="603.5" x2="603.5" y1="115.5" y2="18.3" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="603.5" cy="66.9" r="5.5" fill="#5ef2ff"/><line x1="615.0" x2="615.0" y1="123.7" y2="39.4" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="615.0" cy="81.5" r="5.5" fill="#5ef2ff"/><line x1="626.5" x2="626.5" y1="169.6" y2="88.8" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="626.5" cy="129.2" r="5.5" fill="#5ef2ff"/><line x1="637.9" x2="637.9" y1="202.0" y2="112.7" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="637.9" cy="157.3" r="5.5" fill="#5ef2ff"/><line x1="649.4" x2="649.4" y1="260.2" y2="148.6" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="649.4" cy="204.4" r="5.5" fill="#5ef2ff"/><line x1="660.9" x2="660.9" y1="274.8" y2="187.7" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="660.9" cy="231.3" r="5.5" fill="#5ef2ff"/><line x1="672.3" x2="672.3" y1="243.2" y2="156.7" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="672.3" cy="200.0" r="5.5" fill="#5ef2ff"/><line x1="683.8" x2="683.8" y1="216.4" y2="123.2" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="683.8" cy="169.8" r="5.5" fill="#5ef2ff"/><line x1="692.7" x2="692.7" y1="237.9" y2="156.2" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="692.7" cy="197.0" r="5.5" fill="#5ef2ff"/><line x1="703.9" x2="703.9" y1="322.0" y2="73.4" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="703.9" cy="197.7" r="5.5" fill="#5ef2ff"/><line x1="714.7" x2="714.7" y1="197.6" y2="97.5" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="714.7" cy="147.6" r="5.5" fill="#5ef2ff"/><line x1="725.8" x2="725.8" y1="255.9" y2="139.6" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="725.8" cy="197.7" r="5.5" fill="#5ef2ff"/><line x1="737.0" x2="737.0" y1="315.2" y2="209.8" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="737.0" cy="262.5" r="5.5" fill="#5ef2ff"/><line x1="748.1" x2="748.1" y1="307.8" y2="221.9" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="748.1" cy="264.8" r="5.5" fill="#5ef2ff"/><line x1="759.0" x2="759.0" y1="378.5" y2="201.4" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="759.0" cy="289.9" r="5.5" fill="#5ef2ff"/><line x1="770.1" x2="770.1" y1="291.4" y2="111.5" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="770.1" cy="201.5" r="5.5" fill="#5ef2ff"/><line x1="781.3" x2="781.3" y1="288.0" y2="142.9" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="781.3" cy="215.5" r="5.5" fill="#5ef2ff"/><line x1="792.1" x2="792.1" y1="268.2" y2="142.4" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="792.1" cy="205.3" r="5.5" fill="#5ef2ff"/><line x1="814.4" x2="814.4" y1="328.9" y2="189.5" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="814.4" cy="259.2" r="5.5" fill="#5ef2ff"/><line x1="825.2" x2="825.2" y1="241.1" y2="105.3" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="825.2" cy="173.2" r="5.5" fill="#5ef2ff"/><line x1="836.4" x2="836.4" y1="390.5" y2="253.7" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="836.4" cy="322.1" r="5.5" fill="#5ef2ff"/><line x1="847.5" x2="847.5" y1="247.9" y2="83.0" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="847.5" cy="165.4" r="5.5" fill="#5ef2ff"/><line x1="858.7" x2="858.7" y1="449.0" y2="260.1" stroke="rgba(94,242,255,0.55)" stroke-width="2.5"/><circle cx="858.7" cy="354.6" r="5.5" fill="#5ef2ff"/><text x="83.70370370370375" y="450" text-anchor="middle" font-family="DM Mono, monospace" font-size="26" fill="#a9c3d2">2.5</text><text x="242.962962962963" y="450" text-anchor="middle" font-family="DM Mono, monospace" font-size="26" fill="#a9c3d2">3</text><text x="402.22222222222223" y="450" text-anchor="middle" font-family="DM Mono, monospace" font-size="26" fill="#a9c3d2">3.5</text><text x="561.4814814814815" y="450" text-anchor="middle" font-family="DM Mono, monospace" font-size="26" fill="#a9c3d2">4</text><text x="720.7407407407408" y="450" text-anchor="middle" font-family="DM Mono, monospace" font-size="26" fill="#a9c3d2">4.5</text><text x="896.0" y="450" text-anchor="end" font-family="DM Mono, monospace" font-size="26" fill="#a9c3d2">5 µm</text><text x="346.4814814814816" y="22" text-anchor="middle" font-family="DM Mono, monospace" font-size="26" fill="#ffb84d">methane</text></svg>
         <div class="chain">
           <p id="w1">Light missing at <span class="amber" style="display:inline;font-size:inherit;font-weight:inherit">3.3 µm</span><span>the spectrum of the same source</span></p>
           <i id="w2a">↓</i>
@@ -195,7 +203,7 @@
       </section>
 
       <!-- 23.6 The result -->
-      <section class="clip scene" id="s7" data-start="24" data-duration="3" data-track-index="2">
+      <section class="clip scene" id="s7" data-start="24.3" data-duration="2.8" data-track-index="2">
         <img id="poster" src="assets/poster.png" alt="" />
         <p class="kicker amber" id="s7-k">The result</p>
         <div class="result">
@@ -205,7 +213,7 @@
         <p class="sub" id="s7-sub">No publication found. Waiting for a spectrum.</p>
       </section>
       <!-- 27.1 What comes next -->
-      <section class="clip scene" id="s8" data-start="27" data-duration="2.6" data-track-index="2">
+      <section class="clip scene" id="s8" data-start="27.1" data-duration="2.5" data-track-index="2">
         <img class="logo small" id="logo-b" src="assets/logo.png" alt="" />
         <h2>The next one is yours to find.</h2>
         <p class="sub" id="s8-sub">382 more sources nobody has checked.</p>
@@ -220,41 +228,42 @@
       const leave = (sel, at) => tl.to(sel, { opacity: 0, duration: 0.25, ease: "power1.in" }, at);
 
       rise("#s1 .kicker", 0.05, 0.35); rise("#s1 h2", 0.1, 0.35); rise("#s1 .sub", 0.15, 0.35); leave("#s1", 1.5);
-      rise("#s2 h2", 1.75, 0.35); rise("#s2-sub", 2.3, 0.35); leave("#s2", 3.6);
-      tl.fromTo("#logo-a", { opacity: 0, scale: 0.8 }, { opacity: 1, scale: 1, duration: 0.4, ease: "power3.out" }, 3.82); rise("#s3 .kicker", 3.86, 0.35); tl.fromTo("#s3 h1", { opacity: 0, scale: 0.94 }, { opacity: 1, scale: 1, duration: 0.45, ease: "power3.out" }, 3.88); rise("#s3-sub", 4.2, 0.35); leave("#s3", 5.9);
-      tl.to("#scrim-a", { opacity: 0.55, duration: 0.5 }, 3.8);
+      rise("#s2 h2", 1.75, 0.3); rise("#s2-sub", 2.15, 0.3); leave("#s2", 3.3);
+      tl.fromTo("#logo-a", { opacity: 0, scale: 0.8 }, { opacity: 1, scale: 1, duration: 0.4, ease: "power3.out" }, 3.52); rise("#s3 .kicker", 3.55, 0.3); tl.fromTo("#s3 h1", { opacity: 0, scale: 0.94 }, { opacity: 1, scale: 1, duration: 0.4, ease: "power3.out" }, 3.57); rise("#s3-sub", 3.85, 0.3); leave("#s3", 5.3);
+      tl.to("#scrim-a", { opacity: 0.55, duration: 0.5 }, 3.5);
 
       // Blink across dates: three real stacks on one fixed grid, one after the other.
       const show = (ids, labels, start, end, step) => {
         ids.forEach((id, k) => { tl.set(id, { opacity: k === 0 ? 1 : 0 }, 0); tl.set(labels[k], { opacity: k === 0 ? 1 : 0.3 }, 0); });
         for (let t = start, n = 0; t < end; t += step, n++) ids.forEach((id, k) => { tl.set(id, { opacity: k === n % ids.length ? 1 : 0 }, t); tl.set(labels[k], { opacity: k === n % ids.length ? 1 : 0.3 }, t); });
       };
-      rise("#s4 .frame", 6.1, 0.3); rise("#s4 .say h2", 6.2, 0.4); rise("#s4 .say .sub:not(#s4-diff)", 6.5, 0.4);
-      show(["#d0", "#d1", "#d2"], ["#l0", "#l1", "#l2"], 6.1, 8.3, 0.45);
+      rise("#s4 .frame", 5.5, 0.3); rise("#s4 .say h2", 5.6, 0.35); rise("#s4 .say .sub:not(#s4-diff)", 5.85, 0.35);
+      show(["#d0", "#d1", "#d2"], ["#l0", "#l1", "#l2"], 5.5, 7.6, 0.42);
       // Then what changed: the last date minus the first.
       tl.set("#d3", { opacity: 0 }, 0); tl.set("#l3", { opacity: 0.3 }, 0); tl.set("#s4-diff", { opacity: 0 }, 0);
-      tl.set(["#d0", "#d1", "#d2"], { opacity: 0 }, 8.35); tl.set(["#l0", "#l1", "#l2"], { opacity: 0.3 }, 8.35);
-      tl.set("#d3", { opacity: 1 }, 8.35); tl.set("#l3", { opacity: 1 }, 8.35); rise("#s4-diff", 8.35, 0.3);
+      tl.set(["#d0", "#d1", "#d2"], { opacity: 0 }, 7.65); tl.set(["#l0", "#l1", "#l2"], { opacity: 0.3 }, 7.65);
+      tl.set("#d3", { opacity: 1 }, 7.65); tl.set("#l3", { opacity: 1 }, 7.65); rise("#s4-diff", 7.65, 0.3);
 
-      rise("#s6a h2", 9.95, 0.3); rise("#s6a .sub", 10.05, 0.3);
-      rise("#s6b h2", 12.75, 0.3); rise("#s6b .sub", 12.85, 0.3);
+      rise("#s6a h2", 9.05, 0.3); rise("#s6a .sub", 9.15, 0.3);
+      rise("#s6b h2", 11.55, 0.3); rise("#s6b .sub", 11.65, 0.3);
       // The search box is small on screen: start close to it, then pull back as the map flies to the object.
-      tl.fromTo("#v-qa", { scale: 2.7 }, { scale: 1, duration: 0.45, ease: "power2.inOut" }, 13.55);
-      rise("#s6c h2", 15.35, 0.3); rise("#s6c .sub", 15.45, 0.3);
+      tl.fromTo("#v-qa", { scale: 2.7 }, { scale: 1, duration: 0.42, ease: "power2.inOut" }, 12.3);
+      rise("#s6c h2", 13.95, 0.3); rise("#s6c .sub", 14.05, 0.3);
+      rise("#s10 h2", 15.55, 0.3); rise("#s10 .sub", 15.65, 0.3);
 
       // Crossing surveys: WISE first, then the same patch in SPHEREx, blinked in two colours.
-      rise("#s5 .kicker", 16.95, 0.3); rise("#s5 h2", 17.0, 0.35); rise("#x-wise", 17.15, 0.4);
-      rise("#x-spx", 18.0, 0.4);
+      rise("#s5 .kicker", 17.75, 0.3); rise("#s5 h2", 17.8, 0.35); rise("#x-wise", 17.9, 0.4);
+      rise("#x-spx", 18.7, 0.4);
       tl.set("#c0", { opacity: 1 }, 0); tl.set("#c1", { opacity: 0 }, 0); tl.set("#k0", { opacity: 1 }, 0); tl.set("#k1", { opacity: 0.3 }, 0);
-      [[18.9, 1], [19.6, 0], [20.3, 1]].forEach(([t, methane]) => { tl.set("#c0", { opacity: methane ? 0 : 1 }, t); tl.set("#c1", { opacity: methane ? 1 : 0 }, t); tl.set("#k0", { opacity: methane ? 0.3 : 1 }, t); tl.set("#k1", { opacity: methane ? 1 : 0.3 }, t); });
+      [[19.5, 1], [20.2, 0], [20.8, 1]].forEach(([t, methane]) => { tl.set("#c0", { opacity: methane ? 0 : 1 }, t); tl.set("#c1", { opacity: methane ? 1 : 0 }, t); tl.set("#k0", { opacity: methane ? 0.3 : 1 }, t); tl.set("#k1", { opacity: methane ? 1 : 0.3 }, t); });
 
       // Why that matters: missing light at 3.3 µm is methane, and methane means a cold atmosphere.
-      rise("#s9 .spec", 21.2, 0.35); rise("#w1", 21.3, 0.35); rise("#w2a", 21.75, 0.25); rise("#w2", 21.8, 0.35); rise("#w3a", 22.35, 0.25); rise("#w3", 22.4, 0.35);
+      rise("#s9 .spec", 21.7, 0.35); rise("#w1", 21.8, 0.35); rise("#w2a", 22.2, 0.25); rise("#w2", 22.25, 0.35); rise("#w3a", 22.75, 0.25); rise("#w3", 22.8, 0.35);
 
-      tl.fromTo("#poster", { opacity: 0, x: 80 }, { opacity: 1, x: 0, duration: 0.6, ease: "power3.out" }, 24.1); tl.to("#poster", { y: -240, duration: 2.9, ease: "none" }, 24.1);
-      rise("#s7-k", 24.05, 0.35); tl.fromTo("#s7-n", { opacity: 0, scale: 0.7 }, { opacity: 1, scale: 1, duration: 0.55, ease: "back.out(1.6)" }, 24.1); rise("#s7-h", 24.25, 0.4); rise("#s7-sub", 24.7, 0.4); leave("#s7", 26.78);
-      tl.fromTo("#logo-b", { opacity: 0, scale: 0.8 }, { opacity: 1, scale: 1, duration: 0.4, ease: "power3.out" }, 27.02); rise("#s8 h2", 27.05, 0.35); rise("#s8-sub", 27.2, 0.35); rise("#s8 .credit", 27.1, 0.35);
-      tl.to("#scrim-c", { opacity: 1, duration: 0.5 }, 27.0);
+      tl.fromTo("#poster", { opacity: 0, x: 80 }, { opacity: 1, x: 0, duration: 0.6, ease: "power3.out" }, 24.4); tl.to("#poster", { y: -220, duration: 2.7, ease: "none" }, 24.4);
+      rise("#s7-k", 24.35, 0.35); tl.fromTo("#s7-n", { opacity: 0, scale: 0.7 }, { opacity: 1, scale: 1, duration: 0.55, ease: "back.out(1.6)" }, 24.4); rise("#s7-h", 24.5, 0.4); rise("#s7-sub", 24.9, 0.4); leave("#s7", 26.88);
+      tl.fromTo("#logo-b", { opacity: 0, scale: 0.8 }, { opacity: 1, scale: 1, duration: 0.4, ease: "power3.out" }, 27.12); rise("#s8 h2", 27.15, 0.35); rise("#s8-sub", 27.3, 0.35); rise("#s8 .credit", 27.2, 0.35);
+      tl.to("#scrim-c", { opacity: 1, duration: 0.5 }, 27.1);
 
       window.__timelines["main"] = tl;
       tl.seek(0);

@@ -273,3 +273,7 @@ const shared = async (response: Response): Promise<SharedVotes | null> => { if (
 export const fetchSharedVotes = (id: string): Promise<SharedVotes | null> => fetch(`/api/votes?id=${encodeURIComponent(id)}`).then(shared).catch(() => null);
 export const sendSharedVote = (id: string, vote: Vote): Promise<SharedVotes | null> =>
   fetch("/api/votes", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ id, vote, client: clientId() }) }).then(shared).catch(() => null);
+
+/** The whole community: how many votes on how many sources, and the latest ones. */
+export type Community = { votes: number; sources: number; latest: { id: string; vote: Vote; at: number }[] };
+export const fetchCommunity = (): Promise<Community | null> => fetch("/api/votes").then(async (r) => { if (!r.ok) return null; const b = await r.json(); return typeof b.votes === "number" ? { votes: b.votes, sources: b.sources, latest: b.latest ?? [] } : null; }).catch(() => null);

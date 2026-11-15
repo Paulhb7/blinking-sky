@@ -18,7 +18,12 @@ export async function GET(request) {
   if (!URL_ || !TOKEN) return json({ error: "storage not configured" }, 503);
   const id = new URL(request.url).searchParams.get("id");
   try {
-    if (!id) { const [votes, sources] = await redis([["GET", "total"], ["SCARD", "sources"]]); return json({ votes: Number(votes ?? 0), sources: Number(sources ?? 0) }); }
+    if (!id) {
+      // The whole picture: how many votes on how many sources, and the latest ones.
+      const [votes, sources, recent] = await redis([["GET", "total"], ["SCARD", "sources"], ["LRANGE", "recent", 0, 29]]);
+      const latest = (recent ?? []).map((r) => { try { return typeof r === "string" ? JSON.parse(r) : r; } catch { return null; } }).filter((r) => r && SOURCE.test(r.id) && VOTES.includes(r.vote));
+      return json({ votes: Number(votes ?? 0), sources: Number(sources ?? 0), latest });
+    }
     if (!SOURCE.test(id)) return json({ error: "unknown source" }, 400);
     const [values] = await redis([["HVALS", `v:${id}`]]);
     return json({ id, ...tally(values) });
@@ -35,7 +40,7 @@ export async function POST(request) {
     const ip = (request.headers.get("x-forwarded-for") ?? "unknown").split(",")[0].trim(), slot = `rl:${ip}:${Math.floor(Date.now() / 60000)}`;
     const [hits] = await redis([["INCR", slot], ["EXPIRE", slot, 90]]);
     if (Number(hits) > 40) return json({ error: "too many votes, wait a minute" }, 429);
-    const [added] = await redis([["HSET", `v:${id}`, client, vote], ["SADD", "sources", id]]);
+    const [added] = await redis([["HSET", `v:${id}`, client, vote], ["SADD", "sources", id], ["LPUSH", "recent", JSON.stringify({ id, vote, at: Date.now() })], ["LTRIM", "recent", 0, 99]]);
     const [values] = await redis(Number(added) === 1 ? [["HVALS", `v:${id}`], ["INCR", "total"]] : [["HVALS", `v:${id}`]]);
     return json({ id, ...tally(values) });
   } catch { return json({ error: "storage unavailable" }, 502); }
