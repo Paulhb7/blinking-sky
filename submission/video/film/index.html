@@ -21,9 +21,10 @@
       .clip { position: absolute; inset: 0; width: 1920px; height: 1080px; }
       video.clip { object-fit: cover; }
       #v-qa { transform-origin: 6% 22%; }
-      #v-community { transform-origin: 50% 100%; transform: scale(1.06); }
-      .scrim.top { background: linear-gradient(180deg, rgba(3, 8, 17, 0.97) 0%, rgba(3, 8, 17, 0.95) 24%, rgba(3, 8, 17, 0) 33%); }
-      .scene.upper { justify-content: flex-start; padding-top: 70px; }
+      /* The community page fills the frame below the sentence: its lower left part, enlarged, so the numbers and the list can be read. */
+      #v-community { top: 190px; bottom: 0; height: 890px; object-fit: cover; object-position: 0% 100%; transform-origin: 0% 100%; transform: scale(1.5); clip-path: inset(297px 640px 0 0); }
+      .scrim.top { background: linear-gradient(180deg, rgb(3, 8, 17) 0, rgb(3, 8, 17) 190px, rgba(3, 8, 17, 0) 191px); }
+      .scene.upper { justify-content: flex-start; padding-top: 30px; }
       .scene.upper h2 { font-size: 62px; }
       .scene.upper .sub { font-size: 32px; margin-top: 14px; }
       #v-vote { transform-origin: 100% 55%; transform: scale(2.9); }
